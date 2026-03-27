@@ -2352,10 +2352,16 @@ function AppContent() {
             <h3 className="text-lg font-bold text-sage-800 dark:text-white">Hakkında</h3>
           </div>
           <div className="space-y-4">
-            <div className="p-4 bg-sage-50 dark:bg-white/5 rounded-2xl">
+            <div className="p-4 bg-sage-50 dark:bg-white/5 rounded-2xl flex flex-col gap-4">
               <p className="text-sm text-sage-600 dark:text-white/80 leading-relaxed">
                 Bu uygulama Yaşar Efe tarafından geliştirilmiştir. Modern bir Kur'an takip ve zikir uygulamasıdır.
               </p>
+              <div className="pt-4 border-t border-sage-200 dark:border-white/10 flex flex-col items-start gap-3">
+                <p className="text-xs font-medium text-sage-500 dark:text-white/50 uppercase tracking-wider">Yapay Zeka Altyapısı</p>
+                <a href="https://pollinations.ai" target="_blank" rel="noopener noreferrer" className="flex flex-col gap-2 hover:opacity-80 transition-opacity">
+                  <span className="text-sm font-bold text-sage-800 dark:text-white">Pollinations.ai</span>
+                </a>
+              </div>
             </div>
             
             <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-sage-100 dark:border-neutral-800 overflow-hidden shadow-sm mt-4">
