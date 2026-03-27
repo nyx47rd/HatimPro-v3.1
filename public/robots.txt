@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://hatimpro.vercel.app/sitemap.xml

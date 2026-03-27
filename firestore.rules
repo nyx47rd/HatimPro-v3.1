@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // Passkeys subcollection
+      match /passkeys/{passkeyId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Public passkey payloads (encrypted)
+    match /passkey_payloads/{credentialId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Pending chats (End-to-end encrypted, so public read/write is safe)
+    match /pending_chats/{chatId} {
+      allow read, write: if true;
+    }
+    
+    // Zikir sessions collection
+    match /zikir_sessions/{sessionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Hatim sessions collection
+    match /hatim_sessions/{sessionId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if request.auth != null;
+    }
+  }
+}

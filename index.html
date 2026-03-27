@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>HatimPro | Kuran Hatim ve Zikir Takip Uygulaması</title>
+    <meta name="description" content="HatimPro ile bireysel ve toplu hatimlerinizi takip edin, zikir odalarına katılın, arkadaşlarınızla yarışın ve ibadetlerinizi düzenli hale getirin. Ücretsiz ve reklamsız." />
+    <meta name="keywords" content="hatim, kuran, zikir, ibadet takip, hatim pro, cüz dağıtma, online hatim, zikirmatik, hatim duası" />
+    <meta name="author" content="HatimPro" />
+    <meta name="application-name" content="HatimPro" />
+    <meta property="og:site_name" content="HatimPro" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://hatimpro.vercel.app/" />
+    <meta property="og:title" content="HatimPro | Kuran Hatim ve Zikir Takip Uygulaması" />
+    <meta property="og:description" content="HatimPro ile bireysel ve toplu hatimlerinizi takip edin, zikir odalarına katılın, arkadaşlarınızla yarışın ve ibadetlerinizi düzenli hale getirin." />
+    <meta property="og:image" content="https://hatimpro.vercel.app/pwa-512x512.svg" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary" />
+    <meta property="twitter:url" content="https://hatimpro.vercel.app/" />
+    <meta property="twitter:title" content="HatimPro | Kuran Hatim ve Zikir Takip Uygulaması" />
+    <meta property="twitter:description" content="HatimPro ile bireysel ve toplu hatimlerinizi takip edin, zikir odalarına katılın, arkadaşlarınızla yarışın ve ibadetlerinizi düzenli hale getirin." />
+    <meta property="twitter:image" content="https://hatimpro.vercel.app/pwa-512x512.svg" />
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "HatimPro",
+      "operatingSystem": "Web, Android, iOS",
+      "applicationCategory": "LifestyleApplication, ReligiousApplication",
+      "description": "Kuran Hatim ve Zikir Takip Uygulaması. Bireysel ve toplu hatimlerinizi takip edin, zikir odalarına katılın.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "TRY"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "5",
+        "reviewCount": "10"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "HatimPro",
+      "url": "https://hatimpro.vercel.app/"
+    }
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/pwa-192x192.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="HatimPro" />
+    <meta name="theme-color" content="#4B5E51" />
+    <meta name="google-site-verification" content="TkZHJf3IjLHSoqhBr96-VQGK1sy6djF1nlTAb7BnvN8" />
+    <script>
+      // CRITICAL: Robust Chunk Error & Black Screen Detection
+      (function() {
+        function showReloadUI() {
+          // Prevent multiple overlays
+          if (document.getElementById('app-error-overlay')) return;
+
+          var overlay = document.createElement('div');
+          overlay.id = 'app-error-overlay';
+          overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background-color:#09090b;color:#fff;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;font-family:system-ui,-apple-system,sans-serif;';
+
+          var container = document.createElement('div');
+          container.style.cssText = 'max-width:400px;background-color:#18181b;padding:30px;border-radius:24px;border:1px solid #27272a;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1),0 10px 10px -5px rgba(0,0,0,0.04);';
+
+          var icon = document.createElement('div');
+          icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+          icon.style.marginBottom = '20px';
+
+          var title = document.createElement('h2');
+          title.innerText = 'Bağlantı Hatası';
+          title.style.cssText = 'margin:0 0 10px 0;font-size:20px;font-weight:bold;color:#fff;';
+
+          var message = document.createElement('p');
+          message.innerText = 'Uygulama yüklenirken bir sorun oluştu. İnternet bağlantınızı kontrol edip tekrar deneyin.';
+          message.style.cssText = 'margin:0 0 24px 0;color:#a1a1aa;font-size:14px;line-height:1.5;';
+
+          var button = document.createElement('button');
+          button.innerText = 'Yeniden Yükle';
+          button.style.cssText = 'width:100%;padding:12px;background-color:#10b981;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;transition:background-color 0.2s;';
+          button.onmouseover = function() { button.style.backgroundColor = '#059669'; };
+          button.onmouseout = function() { button.style.backgroundColor = '#10b981'; };
+          button.onclick = function() { window.location.reload(true); };
+
+          container.appendChild(icon);
+          container.appendChild(title);
+          container.appendChild(message);
+          container.appendChild(button);
+          overlay.appendChild(container);
+          document.body.appendChild(overlay);
+        }
+
+        // 1. Catch Chunk Loading Errors
+        window.addEventListener('error', function(e) {
+          var msg = (e.message || '').toLowerCase();
+          if (msg.indexOf('chunk') > -1 || msg.indexOf('loading') > -1 || msg.indexOf('script error') > -1) {
+            showReloadUI();
+          }
+        }, true);
+
+        // 2. Catch Unhandled Rejections
+        window.addEventListener('unhandledrejection', function(e) {
+          var msg = (e.reason && e.reason.message || '').toLowerCase();
+          if (msg.indexOf('chunk') > -1) {
+            showReloadUI();
+          }
+        });
+
+        // 3. Black Screen Detection
+        var checkCount = 0;
+        var checkInterval = setInterval(function() {
+          checkCount++;
+          var root = document.getElementById('root');
+          // If root is empty or contains only a spinner for too long
+          var isEmpty = !root || root.innerHTML.trim() === '';
+          var isStuckLoading = root && root.innerHTML.indexOf('animate-spin') > -1;
+
+          if (isEmpty || isStuckLoading) {
+            if (checkCount >= 10) { // After 5 seconds (500ms * 10)
+              clearInterval(checkInterval);
+              console.error('Black screen or stuck loading detected');
+              // Only show UI if it's truly stuck, maybe network issue
+              // showReloadUI(); // Optional: Don't force UI on slow connections immediately, let user decide or wait
+            }
+          } else {
+            // App mounted successfully
+            clearInterval(checkInterval);
+            console.log('App mounted successfully');
+          }
+        }, 500);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root">
+      <style>
+        #static-splash {
+          position: fixed;
+          inset: 0;
+          z-index: 100;
+          background-color: #324232;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+        }
+        @media (prefers-color-scheme: dark) {
+          #static-splash {
+            background-color: #000000;
+          }
+        }
+        .static-splash-content {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+        }
+        .static-splash-logo {
+          width: 8rem;
+          height: 8rem;
+          position: relative;
+          z-index: 10;
+          filter: drop-shadow(0 25px 25px rgb(0 0 0 / 0.15));
+          margin-bottom: 1.5rem;
+        }
+        .static-splash-title {
+          font-size: 2.25rem;
+          line-height: 2.5rem;
+          font-weight: 700;
+          color: white;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          margin: 0;
+          font-family: system-ui, -apple-system, sans-serif;
+        }
+        .static-splash-subtitle {
+          color: rgba(255, 255, 255, 0.8);
+          margin-top: 0.5rem;
+          font-size: 0.875rem;
+          line-height: 1.25rem;
+          font-weight: 500;
+          letter-spacing: 0.05em;
+          font-family: system-ui, -apple-system, sans-serif;
+        }
+        .static-splash-dots {
+          margin-top: 3rem;
+          display: flex;
+          gap: 0.5rem;
+          justify-content: center;
+          position: relative;
+          z-index: 10;
+        }
+        .static-splash-dot {
+          width: 0.5rem;
+          height: 0.5rem;
+          background-color: white;
+          border-radius: 9999px;
+          box-shadow: 0 0 8px rgba(255,255,255,0.5);
+          animation: static-pulse 1s infinite alternate;
+        }
+        .static-splash-dot:nth-child(2) { animation-delay: 0.2s; }
+        .static-splash-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes static-pulse {
+          0% { transform: scale(1); opacity: 0.3; }
+          100% { transform: scale(1.5); opacity: 1; }
+        }
+      </style>
+      <div id="static-splash">
+        <div class="static-splash-content">
+          <img src="/favicon.svg" alt="HatimPro Logo" class="static-splash-logo" />
+          <div style="text-align: center;">
+            <h1 class="static-splash-title">HatimPro</h1>
+            <p class="static-splash-subtitle">Modern Kur'an Takipçisi</p>
+          </div>
+        </div>
+        <div class="static-splash-dots">
+          <div class="static-splash-dot"></div>
+          <div class="static-splash-dot"></div>
+          <div class="static-splash-dot"></div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
