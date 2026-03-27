@@ -739,16 +739,6 @@ function AppContent() {
     return saved === null ? true : saved === 'true';
   });
 
-  const [isSplashEnabled, setIsSplashEnabled] = useState(() => {
-    const saved = localStorage.getItem('hatim_splash_enabled');
-    return saved === null ? true : saved === 'true';
-  });
-
-  const [showSplash, setShowSplash] = useState(() => {
-    // Only show splash if it's enabled and it's a fresh load (not handled by state persistence across views)
-    return isSplashEnabled;
-  });
-
   const [showTutorial, setShowTutorial] = useState(() => {
     const saved = localStorage.getItem('hatim_tutorial_seen');
     return saved !== 'true';
@@ -839,21 +829,6 @@ function AppContent() {
   useEffect(() => {
     localStorage.setItem('hatim_sound_enabled', isSoundEnabled.toString());
   }, [isSoundEnabled]);
-
-  useEffect(() => {
-    localStorage.setItem('hatim_splash_enabled', isSplashEnabled.toString());
-  }, [isSplashEnabled]);
-
-  useEffect(() => {
-    if (!isSplashEnabled) {
-      setShowSplash(false);
-      return;
-    }
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 800); // Reduced from 2500ms to 800ms for faster startup
-    return () => clearTimeout(timer);
-  }, [isSplashEnabled]);
 
   const activeTask = useMemo(() => {
     return data.tasks.find(t => t.id === data.activeTaskId) || data.tasks[0];
@@ -2256,24 +2231,6 @@ function AppContent() {
                 <div className={`absolute top-1 w-4 h-4 bg-white dark:bg-black rounded-full transition-all ${isSoundEnabled ? 'left-7' : 'left-1'}`} />
               </button>
             </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-sage-50 dark:bg-neutral-800 p-2 rounded-lg text-sage-600 dark:text-white">
-                  <LayoutGrid size={20} />
-                </div>
-                <div>
-                  <p className="font-bold text-sage-800 dark:text-white">Açılış Ekranı</p>
-                  <p className="text-xs text-sage-600 dark:text-neutral-300">Uygulama açılırken splash göster</p>
-                </div>
-              </div>
-              <button 
-                onClick={() => { playClick(); setIsSplashEnabled(!isSplashEnabled); }}
-                className={`w-12 h-6 rounded-full transition-colors relative ${isSplashEnabled ? 'bg-sage-500 dark:bg-white' : 'bg-sage-200 dark:bg-neutral-700'}`}
-              >
-                <div className={`absolute top-1 w-4 h-4 bg-white dark:bg-black rounded-full transition-all ${isSplashEnabled ? 'left-7' : 'left-1'}`} />
-              </button>
-            </div>
           </div>
         </section>
 
@@ -2450,9 +2407,6 @@ function AppContent() {
           )}
         </section>
       </div>
-
-      <div className="text-center">
-      </div>
     </div>
   );
 
@@ -2462,81 +2416,16 @@ function AppContent() {
         <LazyGoogleOneTap />
       </Suspense>
       <AnimatePresence mode="wait">
-        {showSplash || authLoading ? (
-          <motion.div
-            key="splash"
-            initial={{ opacity: 1 }}
-            exit={{ 
-              opacity: 0,
-              scale: 1.1,
-              filter: "blur(10px)",
-              transition: { duration: 0.8, ease: "easeInOut" }
-            }}
-            className="fixed inset-0 z-[100] bg-sage-800 dark:bg-black flex flex-col items-center justify-center overflow-hidden"
-          >
-            {/* Background Decorative Elements */}
-            <motion.div 
-              animate={{ 
-                scale: [1, 1.2, 1],
-                rotate: [0, 90, 180, 270, 360],
-                opacity: [0.1, 0.2, 0.1]
-              }}
-              transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-              className="absolute w-[150%] h-[150%] border-[40px] border-white/5 rounded-full"
-            />
-            
-            <div className="relative flex flex-col items-center justify-center">
-              {/* Logo Glow */}
-              <motion.div
-                animate={{ 
-                  scale: [1, 1.5, 1],
-                  opacity: [0.2, 0.4, 0.2]
-                }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute inset-0 bg-sage-400 blur-3xl rounded-full"
-              />
-              
-              {/* Logo */}
-              <motion.img
-                src="/favicon.svg"
-                alt="HatimPro Logo"
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ duration: 0.8, ease: "backOut" }}
-                className="w-32 h-32 relative z-10 drop-shadow-2xl mb-6"
-              />
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.8 }}
-                className="text-center relative z-10"
-              >
-                <h1 className="text-4xl font-bold text-white tracking-widest uppercase">HatimPro</h1>
-                <p className="text-white/80 mt-2 text-sm font-medium tracking-wider">Modern Kur'an Takipçisi</p>
-              </motion.div>
-            </div>
-
-            <div className="mt-12 flex gap-2 justify-center relative z-10">
-              {[0, 1, 2].map((i) => (
-                <motion.div
-                  key={i}
-                  animate={{ 
-                    scale: [1, 1.5, 1],
-                    opacity: [0.3, 1, 0.3] 
-                  }}
-                  transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
-                  className="w-2 h-2 bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.5)]"
-                />
-              ))}
-            </div>
-          </motion.div>
+        {authLoading ? (
+          <div key="loading" className="fixed inset-0 bg-black flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin" />
+          </div>
         ) : (
           <motion.div
             key="app-content"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
             className="min-h-screen flex flex-col md:flex-row"
           >
             {/* Desktop Sidebar */}
