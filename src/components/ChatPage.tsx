@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
-import { Send, Bot, User, Loader2, Trash2, ArrowLeft, Shield } from 'lucide-react';
+import { Send, Bot, Trash2, ArrowLeft, Shield } from 'lucide-react';
 import { encryptData, decryptData, getRawKeyBase64 } from '../lib/encryption';
 import { HatimData, UserProfile } from '../types';
 
@@ -301,103 +301,105 @@ export const ChatPage: React.FC<ChatPageProps> = ({ onBack, appData, setData, pr
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-80px)] md:h-screen max-w-4xl mx-auto">
+    <div className="flex flex-col h-full w-full bg-[#F2F2F7] dark:bg-black relative">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-neutral-800 bg-neutral-900/50 backdrop-blur-md sticky top-0 z-10">
+      <div className="flex items-center justify-between px-4 py-3 bg-white/70 dark:bg-[#1C1C1E]/70 backdrop-blur-xl border-b border-black/5 dark:border-white/5 sticky top-0 z-20">
         <div className="flex items-center gap-3">
           {onBack && (
             <button 
               onClick={onBack}
-              className="p-2 -ml-2 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-full transition-colors md:hidden"
+              className="p-2 -ml-2 text-[#007AFF] hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors md:hidden"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={24} />
             </button>
           )}
-          <div className="w-10 h-10 bg-emerald-500/20 rounded-full flex items-center justify-center">
-            <Bot size={20} className="text-emerald-500" />
-          </div>
-          <div>
-            <h2 className="text-white font-bold flex items-center gap-2">
-              Dini Asistan
-              <Shield size={14} className="text-emerald-500" />
-            </h2>
-            <p className="text-xs text-emerald-500">Çevrimiçi</p>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-400 to-emerald-600 flex items-center justify-center shadow-sm">
+              <Bot size={20} className="text-white" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-base font-semibold text-black dark:text-white leading-tight">Dini Asistan</span>
+              <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Çevrimiçi</span>
+            </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleClearChat}
-            className="p-2 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors"
-            title="Sohbeti Temizle"
-          >
-            <Trash2 size={18} />
-          </button>
-        </div>
+        <button
+          onClick={handleClearChat}
+          className="p-2 text-[#007AFF] hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors"
+          title="Sohbeti Temizle"
+        >
+          <Trash2 size={20} />
+        </button>
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
-        {messages.filter(m => m.role !== 'system').map((msg, index) => (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            key={msg.id || index}
-            className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
-          >
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-              msg.role === 'user' ? 'bg-blue-500/20 text-blue-500' : 'bg-emerald-500/20 text-emerald-500'
-            }`}>
-              {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
-            </div>
-            <div className={`max-w-[80%] rounded-2xl p-4 ${
-              msg.role === 'user' 
-                ? 'bg-blue-600 text-white rounded-tr-sm' 
-                : 'bg-neutral-800 text-neutral-200 rounded-tl-sm border border-neutral-700'
-            }`}>
-              <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
-            </div>
-          </motion.div>
-        ))}
-        {isLoading && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex gap-3"
-          >
-            <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center shrink-0">
-              <Bot size={16} />
-            </div>
-            <div className="bg-neutral-800 border border-neutral-700 rounded-2xl rounded-tl-sm p-4 flex items-center gap-2">
-              <Loader2 size={16} className="text-emerald-500 animate-spin" />
-              <span className="text-sm text-neutral-400">Düşünüyor...</span>
-            </div>
-          </motion.div>
-        )}
-        <div ref={messagesEndRef} />
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+        <div className="max-w-3xl mx-auto space-y-4 w-full">
+          {messages.filter(m => m.role !== 'system').map((msg, index) => {
+            const isUser = msg.role === 'user';
+            return (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                key={msg.id || index}
+                className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}
+              >
+                <div className={`max-w-[85%] md:max-w-[75%] px-4 py-2.5 text-[15px] leading-relaxed shadow-sm ${
+                  isUser 
+                    ? 'bg-[#007AFF] text-white rounded-[20px] rounded-br-[4px]' 
+                    : 'bg-white dark:bg-[#2C2C2E] text-black dark:text-white rounded-[20px] rounded-bl-[4px] border border-black/5 dark:border-white/5'
+                }`}>
+                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                </div>
+              </motion.div>
+            );
+          })}
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="flex w-full justify-start"
+            >
+              <div className="bg-white dark:bg-[#2C2C2E] border border-black/5 dark:border-white/5 rounded-[20px] rounded-bl-[4px] px-4 py-3.5 shadow-sm flex items-center gap-1.5">
+                <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
+                <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
+                <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} className="w-1.5 h-1.5 bg-gray-400 rounded-full" />
+              </div>
+            </motion.div>
+          )}
+          <div ref={messagesEndRef} className="h-2" />
+        </div>
       </div>
 
       {/* Input Area */}
-      <div className="p-4 border-t border-neutral-800 bg-neutral-900/50 backdrop-blur-md">
-        <form onSubmit={sendMessage} className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Dini konularda veya uygulama hakkında bir soru sorun..."
-            className="flex-1 bg-neutral-800 border border-neutral-700 text-white rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-500 transition-colors"
-            disabled={isLoading}
-          />
+      <div className="px-4 py-3 pb-6 md:pb-3 bg-white/70 dark:bg-[#1C1C1E]/70 backdrop-blur-xl border-t border-black/5 dark:border-white/5 sticky bottom-0 z-20">
+        <form onSubmit={sendMessage} className="flex items-end gap-2 max-w-3xl mx-auto w-full">
+          <div className="flex-1 bg-black/5 dark:bg-white/10 rounded-3xl flex items-center px-4 py-1 min-h-[44px]">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Mesaj yazın..."
+              className="flex-1 bg-transparent border-none focus:outline-none text-[15px] text-black dark:text-white py-2 placeholder:text-black/40 dark:placeholder:text-white/40"
+              disabled={isLoading}
+            />
+          </div>
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:hover:bg-emerald-600 text-white px-4 py-3 rounded-xl transition-colors flex items-center justify-center shrink-0"
+            className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-all ${
+              input.trim() && !isLoading 
+                ? 'bg-[#007AFF] text-white shadow-md scale-100' 
+                : 'bg-black/5 dark:bg-white/10 text-black/30 dark:text-white/30 scale-95'
+            }`}
           >
-            <Send size={20} />
+            <Send size={18} className={input.trim() && !isLoading ? 'ml-0.5' : ''} />
           </button>
         </form>
-        <p className="text-center text-[10px] text-neutral-500 mt-2 flex items-center justify-center gap-1">
+        <p className="text-center text-[10px] text-black/40 dark:text-white/40 mt-2 flex items-center justify-center gap-1 font-medium">
           <Shield size={10} />
-          Mesajlarınız cihazınızda uçtan uca şifrelenir. Yapay zeka hata yapabilir.
+          Uçtan uca şifreli
         </p>
       </div>
     </div>
