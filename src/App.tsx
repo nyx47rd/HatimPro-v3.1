@@ -2699,8 +2699,8 @@ function AppContent() {
                   </div>
                 )}
                 {activeView === 'chat' && (
-                  <div className="fixed inset-0 md:left-64 z-50 bg-black flex justify-center overflow-y-auto">
-                    <div className="w-full max-w-2xl min-h-full relative border-x border-neutral-900 bg-black">
+                  <div className="fixed inset-0 md:left-64 z-[70] bg-black flex justify-center overflow-hidden">
+                    <div className="w-full max-w-2xl h-full relative border-x border-neutral-900 bg-black">
                       <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LazyChatPage 
                           onBack={() => {
