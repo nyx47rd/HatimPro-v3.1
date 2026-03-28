@@ -1,24 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
-const STORAGE_KEY = 'hatimpro_latest_commit_sha';
+const STORAGE_KEY = 'hatimpro_latest_deployment_sha';
 
-export function useGitHubUpdate() {
+export function useVercelUpdate() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [latestCommit, setLatestCommit] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [lastCheckTime, setLastCheckTime] = useState<Date | null>(null);
-  const [checkStatus, setCheckStatus] = useState<'idle' | 'checking' | 'up-to-date' | 'available' | 'error' | 'no-repo'>('idle');
+  const [checkStatus, setCheckStatus] = useState<'idle' | 'checking' | 'up-to-date' | 'available' | 'error'>('idle');
   
   const lastApiCallTime = useRef<number>(0);
-  const repo = import.meta.env.VITE_GITHUB_REPO;
 
   const checkForUpdates = useCallback(async (manual = false) => {
-    if (!repo) {
-      if (manual) console.warn("GitHub Repo is not set.");
-      setCheckStatus('no-repo');
-      return false;
-    }
-
     const now = Date.now();
     // Throttle automatic checks to once every 30 seconds to avoid API rate limits
     if (!manual && now - lastApiCallTime.current < 30000) {
@@ -30,15 +23,11 @@ export function useGitHubUpdate() {
     setCheckStatus('checking');
     
     try {
-      // Add a timestamp to bypass GitHub API cache
-      const response = await fetch(`https://api.github.com/repos/${repo}/commits/main?t=${now}`, {
-        headers: {
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
+      // Vercel API endpoint'imize istek atıyoruz
+      const response = await fetch(`/api/check-update?t=${now}`);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch latest commit');
+        throw new Error('Failed to fetch latest deployment');
       }
 
       const data = await response.json();
@@ -78,7 +67,7 @@ export function useGitHubUpdate() {
     } finally {
       setIsChecking(false);
     }
-  }, [repo]);
+  }, []);
 
   const applyUpdate = async () => {
     if (latestCommit) {
@@ -112,26 +101,22 @@ export function useGitHubUpdate() {
   };
 
   useEffect(() => {
-    if (repo) {
-      // Initial check
-      checkForUpdates();
+    // Initial check
+    checkForUpdates();
 
-      // Check when the user focuses the window/tab
-      const handleFocus = () => checkForUpdates();
-      // Check when the user interacts with the app (clicks anywhere)
-      const handleClick = () => checkForUpdates();
+    // Check when the user focuses the window/tab
+    const handleFocus = () => checkForUpdates();
+    // Check when the user interacts with the app (clicks anywhere)
+    const handleClick = () => checkForUpdates();
 
-      window.addEventListener('focus', handleFocus);
-      document.addEventListener('click', handleClick);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('click', handleClick);
 
-      return () => {
-        window.removeEventListener('focus', handleFocus);
-        document.removeEventListener('click', handleClick);
-      };
-    } else {
-      setCheckStatus('no-repo');
-    }
-  }, [checkForUpdates, repo]);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('click', handleClick);
+    };
+  }, [checkForUpdates]);
 
   return {
     updateAvailable,
@@ -139,7 +124,6 @@ export function useGitHubUpdate() {
     lastCheckTime,
     checkStatus,
     checkForUpdates,
-    applyUpdate,
-    repo
+    applyUpdate
   };
 }

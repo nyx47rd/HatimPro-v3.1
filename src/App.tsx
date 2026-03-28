@@ -55,7 +55,7 @@ import { useGSAP } from '@gsap/react';
 import { HatimData, ReadingLog, HatimTask } from './types';
 import { useAuth } from './contexts/AuthContext';
 import { AuthModal } from './components/AuthModal';
-import { useGitHubUpdate } from './hooks/useGitHubUpdate';
+import { useVercelUpdate } from './hooks/useVercelUpdate';
 import { syncDataToFirebase, listenToFirebaseData } from './services/db';
 import { registerPasskey, getUserPasskeys, deletePasskey } from './lib/webauthn';
 import { auth, db, storage } from './lib/firebase';
@@ -229,7 +229,7 @@ function AppContent() {
     }
   }, { scope: containerRef });
 
-  const { updateAvailable, isChecking, lastCheckTime, checkStatus, checkForUpdates, applyUpdate, repo } = useGitHubUpdate();
+  const { updateAvailable, isChecking, lastCheckTime, checkStatus, checkForUpdates, applyUpdate } = useVercelUpdate();
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -2303,19 +2303,11 @@ function AppContent() {
           </div>
         </section>
 
-        {/* GitHub Version Control Section */}
+        {/* Vercel Version Control Section */}
         <section className="bg-white dark:bg-neutral-900 rounded-3xl p-6 border border-sage-100 dark:border-neutral-800 shadow-sm">
           <h3 className="text-sm font-bold text-sage-500 dark:text-neutral-400 uppercase tracking-widest mb-4">Sürüm Kontrolü</h3>
           
           <div className="space-y-4">
-            {!repo && (
-              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl">
-                <p className="text-sm text-amber-800 dark:text-amber-400 font-medium">
-                  GitHub deposu yapılandırılmamış. Güncellemeleri alabilmek için lütfen ortam değişkenlerine <code className="bg-amber-100 dark:bg-amber-900/40 px-1 rounded">VITE_GITHUB_REPO</code> ekleyin.
-                </p>
-              </div>
-            )}
-
             <div className="flex items-center justify-between p-4 bg-sage-50 dark:bg-neutral-800 rounded-2xl border border-sage-100 dark:border-neutral-700">
               <div>
                 <p className="font-bold text-sage-800 dark:text-white text-sm">Güncelleme Durumu</p>
@@ -2329,7 +2321,7 @@ function AppContent() {
               </div>
               <button 
                 onClick={() => checkForUpdates(true)}
-                disabled={isChecking || !repo}
+                disabled={isChecking}
                 className="px-4 py-2 bg-sage-200 dark:bg-neutral-700 hover:bg-sage-300 dark:hover:bg-neutral-600 text-sage-800 dark:text-white text-xs font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {isChecking ? (
