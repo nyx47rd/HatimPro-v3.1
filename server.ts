@@ -5,12 +5,10 @@ import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import crypto from "crypto";
 import { initializeApp, getApps } from 'firebase/app';
-import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc } from 'firebase/firestore';
+import nodemailer from 'nodemailer';
 
 dotenv.config();
-
-const ONESIGNAL_APP_ID = process.env.VITE_ONESIGNAL_APP_ID || '61205574-f992-486d-ae82-7b6632beb067';
-const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY || '';
 
 const firebaseConfig = {
   apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY,
@@ -23,6 +21,17 @@ const firebaseConfig = {
 
 const appFirebase = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(appFirebase);
+
+// Configure Nodemailer
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: process.env.SMTP_SECURE === 'true',
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
 
 async function startServer() {
   const app = express();
@@ -160,94 +169,84 @@ async function startServer() {
     }
   });
 
-  // Subscribe Route (Kept for backward compatibility if needed, but OneSignal handles this)
+  // Subscribe Route (Kept for backward compatibility if needed)
   app.post("/api/notifications/subscribe", (req, res) => {
     res.status(201).json({});
   });
 
-  // Send Notification Route
+  // Send Email Notification Route (using Nodemailer)
   app.post("/api/notifications/send", async (req, res) => {
     let parsedBody = req.body;
     if (typeof req.body === 'string') {
       try { parsedBody = JSON.parse(req.body); } catch (e) {}
     }
 
-    const title = parsedBody?.title || 'HatimPro';
+    const title = parsedBody?.title || 'HatimPro Bildirimi';
     const bodyText = parsedBody?.body || 'Yeni bildirim!';
-    const url = parsedBody?.url || '/';
-    const subscription = parsedBody?.subscription;
+    const toEmail = parsedBody?.email;
 
-    if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
-      return res.status(500).json({ error: "OneSignal REST_API_KEY eksik. Lütfen Environment Variables kısmına ekleyin." });
+    if (!toEmail) {
+      return res.status(400).json({ error: "E-posta adresi eksik." });
+    }
+
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.log(`[EMAIL SIMULATION] To: ${toEmail}, Subject: ${title}, Body: ${bodyText}`);
+      return res.status(200).json({ message: "E-posta simüle edildi (SMTP ayarları eksik)", simulated: true });
     }
 
     try {
-      const payload: any = {
-        app_id: ONESIGNAL_APP_ID,
-        headings: { en: title, tr: title },
-        contents: { en: bodyText, tr: bodyText },
-        subtitle: { en: bodyText, tr: bodyText },
-        url: url,
-        target_channel: "push"
-      };
-
-      if (subscription) {
-        // Check if it's a OneSignal UUID or a Firebase UID (external_id)
-        if (subscription.includes('-')) {
-          payload.include_subscription_ids = [subscription];
-        } else {
-          payload.include_aliases = {
-            external_id: [subscription]
-          };
-        }
-      } else {
-        // Send to all
-        payload.included_segments = ["Total Subscriptions"];
-      }
-
-      const response = await fetch('https://api.onesignal.com/notifications', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}`
-        },
-        body: JSON.stringify(payload)
+      const info = await transporter.sendMail({
+        from: `"HatimPro" <${process.env.SMTP_USER}>`,
+        to: toEmail,
+        subject: title,
+        text: bodyText,
+        html: `
+          <div style="font-family: sans-serif; padding: 20px; background-color: #f4f7f4; border-radius: 10px;">
+            <h2 style="color: #324232;">${title}</h2>
+            <p style="color: #4a664a; font-size: 16px;">${bodyText}</p>
+            <hr style="border-color: #ceddce; margin-top: 20px; margin-bottom: 20px;" />
+            <p style="color: #82a382; font-size: 12px;">Bu e-posta HatimPro tarafından gönderilmiştir.</p>
+          </div>
+        `
       });
 
-      const data = await response.json();
-      
-      if (response.ok) {
-        res.status(200).json({ message: "Notification sent", data });
-      } else {
-        console.error("OneSignal API Error:", data);
-        res.status(response.status).json({ error: data.errors ? data.errors[0] : "OneSignal API Hatası" });
-      }
+      res.status(200).json({ message: "E-posta gönderildi", messageId: info.messageId });
     } catch (err: any) {
-      console.error("Error sending OneSignal notification:", err);
+      console.error("Error sending email:", err);
       res.status(500).json({ error: err.message });
     }
   });
 
-  // Background "Cron" to simulate server-side triggers
+  // Background "Cron" to simulate server-side triggers for daily reminders
   setInterval(async () => {
     const now = new Date();
     // Example: Send a reminder every hour at minute 0
-    if (now.getMinutes() === 0 && ONESIGNAL_APP_ID && ONESIGNAL_REST_API_KEY) {
+    if (now.getMinutes() === 0) {
       try {
-        await fetch('https://api.onesignal.com/notifications', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}`
-          },
-          body: JSON.stringify({
-            app_id: ONESIGNAL_APP_ID,
-            included_segments: ["All"],
-            headings: { en: "Hatim Pro Hatırlatıcı", tr: "Hatim Pro Hatırlatıcı" },
-            contents: { en: "Bugünkü okumalarınızı yapmayı unutmayın!", tr: "Bugünkü okumalarınızı yapmayı unutmayın!" },
-            url: "/"
-          })
-        });
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        
+        for (const userDoc of usersSnapshot.docs) {
+          const userData = userDoc.data();
+          const settings = userData.notificationSettings;
+          
+          if (settings?.dailyReminder?.enabled && userData.email) {
+            const [hours, minutes] = (settings.dailyReminder.time || '20:00').split(':').map(Number);
+            
+            // Check if it's the right time (ignoring timezone complexities for this simple example)
+            if (now.getHours() === hours) {
+              if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+                await transporter.sendMail({
+                  from: `"HatimPro" <${process.env.SMTP_USER}>`,
+                  to: userData.email,
+                  subject: "HatimPro Günlük Hatırlatıcı",
+                  text: settings.dailyReminder.message || "Günlük Kuran okumanızı yapmayı unutmayın.",
+                });
+              } else {
+                console.log(`[EMAIL SIMULATION] Daily Reminder to ${userData.email}`);
+              }
+            }
+          }
+        }
       } catch (e) {
         console.error("Cron notification error:", e);
       }

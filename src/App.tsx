@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, FormEvent, useRef, Suspense, Component, ReactNode } from 'react';
-import OneSignal from 'react-onesignal';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LiquidGlassButton } from './components/LiquidGlassButton';
 import { 
@@ -333,115 +332,6 @@ function AppContent() {
   }, []);
   
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [pushSubscription, setPushSubscription] = useState<string | null>(null);
-
-  // Initialize OneSignal
-  useEffect(() => {
-    const initOneSignal = async () => {
-      try {
-        const appId = import.meta.env.VITE_ONESIGNAL_APP_ID || "61205574-f992-486d-ae82-7b6632beb067";
-        if (!appId) return;
-        
-        await OneSignal.init({
-          appId: appId,
-          safari_web_id: "web.onesignal.auto.4bead971-106d-461b-853f-83aecbd62d40",
-          allowLocalhostAsSecureOrigin: true,
-          notifyButton: {
-            enable: false,
-            prenotify: false,
-            showCredit: false,
-            text: {
-              'tip.state.unsubscribed': 'Bildirimlere Abone Ol',
-              'tip.state.subscribed': 'Bildirimlere Abone Oldunuz',
-              'tip.state.blocked': 'Bildirimleri Engellediniz',
-              'message.prenotify': 'Bildirimlere abone olmak ister misiniz?',
-              'message.action.subscribed': 'Abonelik için teşekkürler!',
-              'message.action.subscribing': 'Abone olunuyor...',
-              'message.action.resubscribed': 'Tekrar hoş geldiniz!',
-              'message.action.unsubscribed': 'Abonelikten ayrıldınız.',
-              'dialog.main.title': 'Bildirim Ayarları',
-              'dialog.main.button.subscribe': 'ABONE OL',
-              'dialog.main.button.unsubscribe': 'ABONELİKTEN AYRIL',
-              'dialog.blocked.title': 'Bildirimleri Açın',
-              'dialog.blocked.message': 'Bildirimleri almak için tarayıcı ayarlarından izin verin.'
-            }
-          },
-          promptOptions: {
-            slidedown: {
-              prompts: [
-                {
-                  type: "push",
-                  autoPrompt: true,
-                  delay: {
-                    pageViews: 1,
-                    timeDelay: 5
-                  },
-                  text: {
-                    actionMessage: "Hatim ve cüz hatırlatmaları için bildirimlere izin verin.",
-                    acceptButton: "İzin Ver",
-                    cancelButton: "İptal"
-                  }
-                }
-              ]
-            }
-          }
-        });
-
-        if (user) {
-          try {
-            await OneSignal.login(user.uid);
-          } catch (loginError) {
-            console.log("OneSignal login error:", loginError);
-          }
-        }
-
-        // Otomatik bildirim izni iste
-        try {
-          if (typeof window !== 'undefined' && window.Notification && Notification.permission === 'default') {
-            await OneSignal.Slidedown.promptPush();
-          }
-        } catch (promptError) {
-          console.log("Bildirim izni istenirken hata:", promptError);
-        }
-
-        // Get current subscription state
-        const subscriptionId = OneSignal.User.PushSubscription.id;
-        if (subscriptionId) {
-          setPushSubscription(subscriptionId);
-          if (user) {
-            await updateDoc(doc(db, 'users', user.uid), {
-              pushSubscription: subscriptionId
-            });
-          }
-        }
-
-        // Listen for subscription changes
-        OneSignal.User.PushSubscription.addEventListener("change", async (event) => {
-          if (event.current.id) {
-            setPushSubscription(event.current.id);
-            if (user) {
-              await updateDoc(doc(db, 'users', user.uid), {
-                pushSubscription: event.current.id
-              });
-            }
-          }
-        });
-      } catch (e) {
-        console.error("OneSignal init error:", e);
-      }
-    };
-
-    initOneSignal();
-  }, [user]);
-
-  const requestNotificationPermission = async () => {
-    try {
-      await OneSignal.Slidedown.promptPush();
-    } catch (error) {
-      console.error('Bildirim izni alınırken hata:', error);
-      alert('Bildirim izni alınırken bir hata oluştu.');
-    }
-  };
 
   useEffect(() => {
     if (!user) {
@@ -1771,78 +1661,6 @@ function AppContent() {
                   </div>
                 </div>
 
-                {/* Notification Permission */}
-                <div className="flex items-center justify-between p-4 bg-sage-50 dark:bg-neutral-800 rounded-2xl">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-xl text-blue-600 dark:text-blue-400">
-                      <Bell size={20} />
-                    </div>
-                    <span className="font-bold text-sage-800 dark:text-white text-sm">Bildirim İzni</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={requestNotificationPermission}
-                      className={`text-xs font-bold px-3 py-1.5 rounded-lg transition-colors ${
-                        Notification.permission === 'granted' 
-                          ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' 
-                          : 'bg-black text-white hover:bg-neutral-800'
-                      }`}
-                    >
-                      {Notification.permission === 'granted' ? 'İzin Verildi' : 'İzin Ver'}
-                    </button>
-                    {Notification.permission === 'granted' && (
-                      <button 
-                        onClick={async () => {
-                          try {
-                            // Fetch the OneSignal subscription ID
-                            let currentSub = OneSignal.User.PushSubscription.id;
-
-                            if (!currentSub) {
-                              setNotificationMsg({ type: 'error', text: 'OneSignal abonelik ID alınamadı. Lütfen sayfayı yenileyip tekrar deneyin.' });
-                              return;
-                            }
-
-                            const response = await fetch('/api/notifications/send', {
-                              method: 'POST',
-                              body: JSON.stringify({
-                                title: 'Hatim Pro Test',
-                                body: 'Sunucu üzerinden gönderilen test bildirimi!',
-                                url: '/',
-                                subscription: user?.uid || currentSub
-                              }),
-                              headers: { 'content-type': 'application/json' }
-                            });
-                            
-                            if (response.ok) {
-                              const resData = await response.json();
-                              if (resData.warning) {
-                                setNotificationMsg({ type: 'error', text: resData.warning });
-                              } else {
-                                setNotificationMsg({ type: 'success', text: 'Test bildirimi gönderildi!' });
-                                setTimeout(() => setNotificationMsg(null), 3000);
-                              }
-                            } else {
-                              const errData = await response.json();
-                              setNotificationMsg({ type: 'error', text: `Hata: ${errData.error || errData.details || response.statusText}` });
-                            }
-                          } catch (e: any) {
-                            console.error(e);
-                            setNotificationMsg({ type: 'error', text: `Bağlantı hatası: ${e.message}` });
-                          }
-                        }}
-                        className="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-                      >
-                        Test Et
-                      </button>
-                    )}
-                  </div>
-                </div>
-                {notificationMsg && (
-                  <div className={`mt-2 p-2 rounded-lg text-xs font-bold text-white text-center ${notificationMsg.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`}>
-                    {notificationMsg.text}
-                  </div>
-                )}
-
                 {/* 2FA Section */}
                 <div className="mt-4 p-4 bg-sage-50 dark:bg-neutral-800 rounded-2xl border border-sage-100 dark:border-neutral-700">
                   <div className="flex items-center justify-between mb-2">
@@ -2195,29 +2013,6 @@ function AppContent() {
           <h3 className="text-sm font-bold text-sage-500 dark:text-white uppercase tracking-widest mb-4">Uygulama Ayarları</h3>
           
           <div className="space-y-6">
-            {/* Notification Permission */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-sage-50 dark:bg-neutral-800 p-2 rounded-lg text-sage-600 dark:text-white">
-                  <Bell size={20} />
-                </div>
-                <div>
-                  <p className="font-bold text-sage-800 dark:text-white">Bildirim İzni</p>
-                  <p className="text-xs text-sage-600 dark:text-neutral-300">Masaüstü bildirimlerini aç</p>
-                </div>
-              </div>
-              <button 
-                onClick={requestNotificationPermission}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
-                  Notification.permission === 'granted' 
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' 
-                    : 'bg-sage-200 text-sage-700 dark:bg-neutral-700 dark:text-white hover:bg-sage-300'
-                }`}
-              >
-                {Notification.permission === 'granted' ? 'İzin Verildi' : 'İzin Ver'}
-              </button>
-            </div>
-
             <button 
               onClick={() => { playClick(); setActiveView('notification-settings'); }}
               className="w-full flex items-center justify-between p-4 bg-sage-50 dark:bg-neutral-800 rounded-2xl hover:bg-sage-100 dark:hover:bg-neutral-700 transition-colors"
@@ -2227,8 +2022,8 @@ function AppContent() {
                   <SettingsIcon size={20} />
                 </div>
                 <div className="text-left">
-                  <p className="font-bold text-sage-800 dark:text-white">Bildirim Ayarları</p>
-                  <p className="text-xs text-sage-600 dark:text-neutral-400">Saatleri ve mesajları özelleştirin</p>
+                  <p className="font-bold text-sage-800 dark:text-white">E-posta Bildirim Ayarları</p>
+                  <p className="text-xs text-sage-600 dark:text-neutral-400">E-posta tercihlerinizi yönetin</p>
                 </div>
               </div>
               <ChevronRight size={20} className="text-sage-400" />

@@ -172,8 +172,8 @@ export function NotificationSettingsPage({ onBack }: Props) {
           <ArrowLeft size={24} />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-sage-800 dark:text-white">Bildirim Ayarları</h1>
-          <p className="text-sm text-sage-500 dark:text-white/60">Uygulama içi ve anlık bildirim tercihlerinizi yönetin</p>
+          <h1 className="text-2xl font-bold text-sage-800 dark:text-white">E-posta Bildirim Ayarları</h1>
+          <p className="text-sm text-sage-500 dark:text-white/60">E-posta bildirim tercihlerinizi yönetin</p>
         </div>
       </div>
 

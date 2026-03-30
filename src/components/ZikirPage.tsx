@@ -35,7 +35,7 @@ export const ZikirPage: React.FC<ZikirPageProps> = ({ onBack, playClick, joinSes
   
   // Active Task State
   const [activeTask, setActiveTask] = useState<ZikirTask | null>(null);
-  const [mutualFollowers, setMutualFollowers] = useState<{uid: string, username: string, photoURL: string, pushSubscription?: any}[]>([]);
+  const [mutualFollowers, setMutualFollowers] = useState<{uid: string, username: string, photoURL: string, email?: string}[]>([]);
   
   // Create Task Form State
   const [createModalTab, setCreateModalTab] = useState<'create' | 'join'>('create');
@@ -160,7 +160,7 @@ export const ZikirPage: React.FC<ZikirPageProps> = ({ onBack, playClick, joinSes
               uid: userData.uid,
               username: userData.username || userData.displayName || 'İsimsiz',
               photoURL: userData.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.uid}`,
-              pushSubscription: userData.pushSubscription
+              email: userData.email
             });
           }
         }
@@ -331,19 +331,19 @@ export const ZikirPage: React.FC<ZikirPageProps> = ({ onBack, playClick, joinSes
         status: 'pending'
       });
 
-      // Send push notification if target user has a subscription
+      // Send email notification if target user has an email
       const targetUser = mutualFollowers.find(f => f.uid === inviteeUid);
-      if (targetUser && targetUser.pushSubscription) {
+      if (targetUser && targetUser.email) {
         await fetch('/api/notifications/send', {
           method: 'POST',
           body: JSON.stringify({
             title: 'Zikir Daveti',
             body: `${profile.username || profile.displayName || 'Bir kullanıcı'} seni "${activeTask.name}" zikrine davet etti!`,
             url: `/zikir?join=${activeTask.id}`,
-            subscription: targetUser.pushSubscription
+            email: targetUser.email
           }),
           headers: { 'content-type': 'application/json' }
-        }).catch(err => console.error("Push notification error:", err));
+        }).catch(err => console.error("Email notification error:", err));
       }
 
       setInvitedUsers(prev => [...prev, inviteeUid]);

@@ -236,15 +236,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ username, onBack, play
             read: false
           });
 
-          // Send push notification if target user has a subscription
-          if (profile.pushSubscription) {
+          // Send email notification if target user has an email
+          if (profile.email) {
             await fetch('/api/notifications/send', {
               method: 'POST',
               body: JSON.stringify({
                 title: 'Yeni Takipçi',
                 body: `${currentUserProfile.displayName || 'Bir kullanıcı'} seni takip etmeye başladı!`,
                 url: `/profile/${currentUserProfile.username || user.uid}`,
-                subscription: profile.pushSubscription
+                email: profile.email
               }),
               headers: { 'content-type': 'application/json' }
             });
