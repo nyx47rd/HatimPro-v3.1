@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Bell, Clock, MessageSquare, Save, ArrowLeft, Check, X } from 'lucide-react';
-import { HatimData } from '../types';
+import { Bell, Clock, MessageSquare, Save, ArrowLeft, Check, MapPin, Loader2 } from 'lucide-react';
 import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,24 +9,43 @@ interface Props {
   onBack: () => void;
 }
 
-interface NotificationConfig {
+interface BaseNotificationConfig {
   enabled: boolean;
+}
+
+interface ScheduledNotificationConfig extends BaseNotificationConfig {
   time: string;
   message: string;
 }
 
+interface NamazNotificationConfig extends BaseNotificationConfig {
+  location?: { lat: number; lng: number; city?: string };
+  fajr: boolean;
+  dhuhr: boolean;
+  asr: boolean;
+  maghrib: boolean;
+  isha: boolean;
+  offsetMinutes: number;
+}
+
 interface UserNotificationSettings {
-  dailyReminder: NotificationConfig;
-  hatimReminder: NotificationConfig;
-  zikirReminder: NotificationConfig;
-  namazReminder: NotificationConfig;
+  zikirInvites: BaseNotificationConfig;
+  newFollower: BaseNotificationConfig;
+  hatimCompleted: BaseNotificationConfig;
+  dailyReminder: ScheduledNotificationConfig;
+  namazReminder: NamazNotificationConfig;
 }
 
 const DEFAULT_SETTINGS: UserNotificationSettings = {
-  dailyReminder: { enabled: true, time: '20:00', message: 'Günlük okumanızı yapmayı unutmayın.' },
-  hatimReminder: { enabled: true, time: '10:00', message: 'Hatim odanızda yeni mesajlar var.' },
-  zikirReminder: { enabled: false, time: '08:00', message: 'Günlük zikirlerinizi tamamladınız mı?' },
-  namazReminder: { enabled: true, time: '05:00', message: 'Namaz vakti yaklaşıyor.' },
+  zikirInvites: { enabled: true },
+  newFollower: { enabled: true },
+  hatimCompleted: { enabled: true },
+  dailyReminder: { enabled: false, time: '20:00', message: 'Günlük Kuran okumanızı yapmayı unutmayın.' },
+  namazReminder: { 
+    enabled: false, 
+    fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true, 
+    offsetMinutes: 15 
+  },
 };
 
 export function NotificationSettingsPage({ onBack }: Props) {
@@ -35,6 +53,8 @@ export function NotificationSettingsPage({ onBack }: Props) {
   const [settings, setSettings] = useState<UserNotificationSettings>(DEFAULT_SETTINGS);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [prayerTimes, setPrayerTimes] = useState<any>(null);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -52,6 +72,50 @@ export function NotificationSettingsPage({ onBack }: Props) {
     loadSettings();
   }, [user]);
 
+  useEffect(() => {
+    if (settings.namazReminder.location) {
+      fetchPrayerTimes(settings.namazReminder.location.lat, settings.namazReminder.location.lng);
+    }
+  }, [settings.namazReminder.location]);
+
+  const fetchPrayerTimes = async (lat: number, lng: number) => {
+    try {
+      const res = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=13`);
+      const data = await res.json();
+      if (data.code === 200) {
+        setPrayerTimes(data.data.timings);
+      }
+    } catch (error) {
+      console.error("Error fetching prayer times:", error);
+    }
+  };
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Tarayıcınız konum özelliğini desteklemiyor.");
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setSettings(prev => ({
+          ...prev,
+          namazReminder: {
+            ...prev.namazReminder,
+            location: { lat: latitude, lng: longitude, city: "Konumunuz" }
+          }
+        }));
+        setIsLocating(false);
+      },
+      (error) => {
+        console.error("Location error", error);
+        alert("Konum alınamadı. Lütfen izin verdiğinizden emin olun.");
+        setIsLocating(false);
+      }
+    );
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setIsSaving(true);
@@ -68,90 +132,209 @@ export function NotificationSettingsPage({ onBack }: Props) {
     }
   };
 
-  const updateSetting = (key: keyof UserNotificationSettings, field: keyof NotificationConfig, value: any) => {
+  const updateBaseSetting = (key: keyof UserNotificationSettings, enabled: boolean) => {
     setSettings(prev => ({
       ...prev,
-      [key]: {
-        ...prev[key],
-        [field]: value
-      }
+      [key]: { ...prev[key], enabled }
     }));
   };
 
-  const renderSettingSection = (title: string, key: keyof UserNotificationSettings, description: string) => {
-    const config = settings[key];
-    return (
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-bold text-white">{title}</h3>
-            <p className="text-sm text-white/60">{description}</p>
-          </div>
-          <button 
-            onClick={() => updateSetting(key, 'enabled', !config.enabled)}
-            className={`w-12 h-6 rounded-full transition-colors relative ${config.enabled ? 'bg-sage-500' : 'bg-white/20'}`}
-          >
-            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${config.enabled ? 'left-7' : 'left-1'}`} />
-          </button>
-        </div>
-
-        {config.enabled && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="pt-4 border-t border-white/10 space-y-4"
-          >
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-white/80 flex items-center gap-2">
-                <Clock size={16} />
-                Bildirim Saati
-              </label>
-              <input 
-                type="time" 
-                value={config.time}
-                onChange={(e) => updateSetting(key, 'time', e.target.value)}
-                className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sage-500"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-white/80 flex items-center gap-2">
-                <MessageSquare size={16} />
-                Bildirim Mesajı
-              </label>
-              <input 
-                type="text" 
-                value={config.message}
-                onChange={(e) => updateSetting(key, 'message', e.target.value)}
-                className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-sage-500"
-                placeholder="Bildirim mesajını girin..."
-              />
-            </div>
-          </motion.div>
-        )}
-      </div>
-    );
+  const updateScheduledSetting = (key: 'dailyReminder', field: keyof ScheduledNotificationConfig, value: any) => {
+    setSettings(prev => ({
+      ...prev,
+      [key]: { ...prev[key], [field]: value }
+    }));
   };
+
+  const updateNamazSetting = (field: keyof NamazNotificationConfig, value: any) => {
+    setSettings(prev => ({
+      ...prev,
+      namazReminder: { ...prev.namazReminder, [field]: value }
+    }));
+  };
+
+  const renderToggle = (enabled: boolean, onChange: () => void) => (
+    <button 
+      onClick={onChange}
+      className={`w-12 h-6 rounded-full transition-colors relative flex-shrink-0 ${enabled ? 'bg-sage-500' : 'bg-neutral-300 dark:bg-white/20'}`}
+    >
+      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${enabled ? 'left-7' : 'left-1'}`} />
+    </button>
+  );
 
   return (
     <div className="space-y-6 pb-24">
       <div className="flex items-center gap-4 mb-8">
         <button 
           onClick={onBack}
-          className="p-2 rounded-full hover:bg-white/10 transition-colors text-white"
+          className="p-2 rounded-full hover:bg-sage-100 dark:hover:bg-white/10 transition-colors text-sage-800 dark:text-white"
         >
           <ArrowLeft size={24} />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-white">Bildirim Ayarları</h1>
-          <p className="text-sm text-white/60">Bildirim saatlerini ve mesajlarını özelleştirin</p>
+          <h1 className="text-2xl font-bold text-sage-800 dark:text-white">Bildirim Ayarları</h1>
+          <p className="text-sm text-sage-500 dark:text-white/60">Uygulama içi ve anlık bildirim tercihlerinizi yönetin</p>
         </div>
       </div>
 
       <div className="space-y-6">
-        {renderSettingSection('Günlük Okuma Hatırlatıcısı', 'dailyReminder', 'Her gün Kuran okumanızı hatırlatır')}
-        {renderSettingSection('Hatim Odası Bildirimleri', 'hatimReminder', 'Hatim odalarındaki etkinlikleri bildirir')}
-        {renderSettingSection('Zikir Hatırlatıcısı', 'zikirReminder', 'Günlük zikir hedeflerinizi hatırlatır')}
-        {renderSettingSection('Namaz Vakti Bildirimleri', 'namazReminder', 'Namaz vakitleri yaklaştığında uyarır')}
+        {/* Etkileşim Bildirimleri */}
+        <div className="bg-white dark:bg-white/5 border border-sage-200 dark:border-white/10 rounded-2xl p-5 space-y-4 shadow-sm">
+          <h3 className="text-lg font-bold text-sage-800 dark:text-white mb-4">Etkileşim Bildirimleri</h3>
+          
+          <div className="flex items-center justify-between py-2">
+            <div>
+              <p className="font-medium text-sage-800 dark:text-white">Zikir Davetleri</p>
+              <p className="text-xs text-sage-500 dark:text-white/60">Biri sizi zikir odasına davet ettiğinde</p>
+            </div>
+            {renderToggle(settings.zikirInvites.enabled, () => updateBaseSetting('zikirInvites', !settings.zikirInvites.enabled))}
+          </div>
+          
+          <div className="flex items-center justify-between py-2 border-t border-sage-100 dark:border-white/10">
+            <div>
+              <p className="font-medium text-sage-800 dark:text-white">Yeni Takipçi</p>
+              <p className="text-xs text-sage-500 dark:text-white/60">Biri sizi takip etmeye başladığında</p>
+            </div>
+            {renderToggle(settings.newFollower.enabled, () => updateBaseSetting('newFollower', !settings.newFollower.enabled))}
+          </div>
+
+          <div className="flex items-center justify-between py-2 border-t border-sage-100 dark:border-white/10">
+            <div>
+              <p className="font-medium text-sage-800 dark:text-white">Hatim Tamamlandı</p>
+              <p className="text-xs text-sage-500 dark:text-white/60">Katıldığınız hatim odasında hatim bittiğinde</p>
+            </div>
+            {renderToggle(settings.hatimCompleted.enabled, () => updateBaseSetting('hatimCompleted', !settings.hatimCompleted.enabled))}
+          </div>
+        </div>
+
+        {/* Günlük Hatırlatıcı */}
+        <div className="bg-white dark:bg-white/5 border border-sage-200 dark:border-white/10 rounded-2xl p-5 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-sage-800 dark:text-white">Günlük Okuma Hatırlatıcısı</h3>
+              <p className="text-sm text-sage-500 dark:text-white/60">Her gün belirlediğiniz saatte bildirim alın</p>
+            </div>
+            {renderToggle(settings.dailyReminder.enabled, () => updateScheduledSetting('dailyReminder', 'enabled', !settings.dailyReminder.enabled))}
+          </div>
+
+          {settings.dailyReminder.enabled && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="pt-4 border-t border-sage-100 dark:border-white/10 space-y-4"
+            >
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-sage-700 dark:text-white/80 flex items-center gap-2">
+                  <Clock size={16} />
+                  Bildirim Saati
+                </label>
+                <input 
+                  type="time" 
+                  value={settings.dailyReminder.time}
+                  onChange={(e) => updateScheduledSetting('dailyReminder', 'time', e.target.value)}
+                  className="w-full bg-sage-50 dark:bg-black/50 border border-sage-200 dark:border-white/10 rounded-xl px-4 py-3 text-sage-800 dark:text-white focus:outline-none focus:border-sage-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-sage-700 dark:text-white/80 flex items-center gap-2">
+                  <MessageSquare size={16} />
+                  Bildirim Mesajı
+                </label>
+                <input 
+                  type="text" 
+                  value={settings.dailyReminder.message}
+                  onChange={(e) => updateScheduledSetting('dailyReminder', 'message', e.target.value)}
+                  className="w-full bg-sage-50 dark:bg-black/50 border border-sage-200 dark:border-white/10 rounded-xl px-4 py-3 text-sage-800 dark:text-white focus:outline-none focus:border-sage-500"
+                  placeholder="Bildirim mesajını girin..."
+                />
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        {/* Namaz Vakitleri */}
+        <div className="bg-white dark:bg-white/5 border border-sage-200 dark:border-white/10 rounded-2xl p-5 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-sage-800 dark:text-white">Namaz Vakitleri</h3>
+              <p className="text-sm text-sage-500 dark:text-white/60">Konumunuza göre namaz vakitlerinde bildirim alın</p>
+            </div>
+            {renderToggle(settings.namazReminder.enabled, () => updateNamazSetting('enabled', !settings.namazReminder.enabled))}
+          </div>
+
+          {settings.namazReminder.enabled && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="pt-4 border-t border-sage-100 dark:border-white/10 space-y-4"
+            >
+              {!settings.namazReminder.location ? (
+                <div className="bg-sage-50 dark:bg-neutral-800/50 p-4 rounded-xl text-center space-y-3">
+                  <MapPin className="mx-auto text-sage-500 mb-2" size={24} />
+                  <p className="text-sm text-sage-700 dark:text-neutral-300">Namaz vakitlerini hesaplamak için konum izni gereklidir.</p>
+                  <button 
+                    onClick={handleGetLocation}
+                    disabled={isLocating}
+                    className="bg-sage-500 hover:bg-sage-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 mx-auto"
+                  >
+                    {isLocating ? <Loader2 size={16} className="animate-spin" /> : <MapPin size={16} />}
+                    Konum İzni Ver
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between bg-sage-50 dark:bg-neutral-800/50 p-3 rounded-xl">
+                    <div className="flex items-center gap-2 text-sm text-sage-700 dark:text-neutral-300">
+                      <MapPin size={16} className="text-sage-500" />
+                      <span>Konum ayarlandı</span>
+                    </div>
+                    <button onClick={handleGetLocation} className="text-xs text-sage-600 dark:text-sage-400 font-medium hover:underline">
+                      Güncelle
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-sage-700 dark:text-white/80">Bildirim Zamanı</label>
+                    <select 
+                      value={settings.namazReminder.offsetMinutes}
+                      onChange={(e) => updateNamazSetting('offsetMinutes', parseInt(e.target.value))}
+                      className="w-full bg-sage-50 dark:bg-black/50 border border-sage-200 dark:border-white/10 rounded-xl px-4 py-3 text-sage-800 dark:text-white focus:outline-none focus:border-sage-500"
+                    >
+                      <option value={0}>Tam vaktinde</option>
+                      <option value={15}>15 dakika önce</option>
+                      <option value={30}>30 dakika önce</option>
+                      <option value={45}>45 dakika önce</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-sage-700 dark:text-white/80">Hangi Vakitler?</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {[
+                        { key: 'fajr', label: 'Sabah', time: prayerTimes?.Fajr },
+                        { key: 'dhuhr', label: 'Öğle', time: prayerTimes?.Dhuhr },
+                        { key: 'asr', label: 'İkindi', time: prayerTimes?.Asr },
+                        { key: 'maghrib', label: 'Akşam', time: prayerTimes?.Maghrib },
+                        { key: 'isha', label: 'Yatsı', time: prayerTimes?.Isha }
+                      ].map((vakit) => (
+                        <div key={vakit.key} className="flex items-center justify-between p-3 bg-sage-50 dark:bg-black/30 rounded-xl border border-sage-100 dark:border-white/5">
+                          <div>
+                            <span className="text-sm font-medium text-sage-800 dark:text-white">{vakit.label}</span>
+                            {vakit.time && <span className="ml-2 text-xs text-sage-500 dark:text-neutral-400">{vakit.time}</span>}
+                          </div>
+                          {renderToggle(
+                            settings.namazReminder[vakit.key as keyof NamazNotificationConfig] as boolean, 
+                            () => updateNamazSetting(vakit.key as keyof NamazNotificationConfig, !settings.namazReminder[vakit.key as keyof NamazNotificationConfig])
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </div>
       </div>
 
       <div className="pt-6">

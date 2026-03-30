@@ -2459,7 +2459,7 @@ function AppContent() {
                   <Home size={20} strokeWidth={activeView === 'home' ? 2.5 : 2} />
                   Ana Sayfa
                 </button>
-                <button onClick={() => handleProtectedAction(() => setActiveView('tasks'))} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'tasks' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
+                <button onClick={() => { playClick(); setActiveView('tasks'); }} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'tasks' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
                   <ListTodo size={20} strokeWidth={activeView === 'tasks' ? 2.5 : 2} />
                   Görevler
                 </button>
@@ -2467,7 +2467,7 @@ function AppContent() {
                   <RotateCcw size={20} strokeWidth={activeView === 'zikir' ? 2.5 : 2} />
                   Zikir
                 </button>
-                <button onClick={() => setActiveView('namaz')} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'namaz' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
+                <button onClick={() => handleProtectedAction(() => setActiveView('namaz'))} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'namaz' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
                   <Calendar size={20} strokeWidth={activeView === 'namaz' ? 2.5 : 2} />
                   Namaz Takip
                 </button>
@@ -2482,15 +2482,15 @@ function AppContent() {
                     <Book size={20} strokeWidth={activeView === 'hatim-rooms' ? 2.5 : 2} />
                     Hatim Odaları
                   </button>
-                  <button onClick={() => { playClick(); setActiveView('chat'); }} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'chat' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
+                  <button onClick={() => handleProtectedAction(() => { playClick(); setActiveView('chat'); })} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'chat' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
                     <Bot size={20} strokeWidth={activeView === 'chat' ? 2.5 : 2} />
                     Yapay Zeka Asistanı
                   </button>
-                  <button onClick={() => { playClick(); setActiveView('leaderboard'); }} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'leaderboard' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
+                  <button onClick={() => handleProtectedAction(() => { playClick(); setActiveView('leaderboard'); })} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'leaderboard' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
                     <Trophy size={20} strokeWidth={activeView === 'leaderboard' ? 2.5 : 2} />
                     Liderlik Tablosu
                   </button>
-                  <button onClick={() => { playClick(); setActiveView('stats'); }} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'stats' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
+                  <button onClick={() => handleProtectedAction(() => { playClick(); setActiveView('stats'); })} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'stats' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
                     <BarChart2 size={20} strokeWidth={activeView === 'stats' ? 2.5 : 2} />
                     İstatistikler
                   </button>
@@ -2762,7 +2762,7 @@ function AppContent() {
                       <span className="text-[10px] font-medium hidden sm:block">Ana Sayfa</span>
                     </button>
                     <button 
-                      onClick={() => handleProtectedAction(() => { playClick(); setActiveView('tasks'); })}
+                      onClick={() => { playClick(); setActiveView('tasks'); }}
                       className={`flex flex-col items-center gap-1 transition-colors ${activeView === 'tasks' ? 'text-sage-800 dark:text-white' : 'text-sage-400 dark:text-neutral-500'}`}
                     >
                       <ListTodo size={22} strokeWidth={activeView === 'tasks' ? 2.5 : 2} />
@@ -2776,7 +2776,7 @@ function AppContent() {
                       <span className="text-[10px] font-medium hidden sm:block">Zikir</span>
                     </button>
                     <button 
-                      onClick={() => { playClick(); setActiveView('namaz'); }}
+                      onClick={() => handleProtectedAction(() => { playClick(); setActiveView('namaz'); })}
                       className={`flex flex-col items-center gap-1 transition-colors ${activeView === 'namaz' ? 'text-sage-800 dark:text-white' : 'text-sage-400 dark:text-neutral-500'}`}
                     >
                       <Calendar size={22} strokeWidth={activeView === 'namaz' ? 2.5 : 2} />
@@ -2816,19 +2816,19 @@ function AppContent() {
                                 </div>
                                 <span className="font-bold text-sage-800 dark:text-white">Hatim Odaları</span>
                               </button>
-                              <button onClick={() => { playClick(); setActiveView('chat'); setIsMoreDrawerOpen(false); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-sage-50 dark:hover:bg-neutral-800 rounded-2xl transition-colors">
+                              <button onClick={() => handleProtectedAction(() => { playClick(); setActiveView('chat'); setIsMoreDrawerOpen(false); })} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-sage-50 dark:hover:bg-neutral-800 rounded-2xl transition-colors">
                                 <div className="bg-teal-100 dark:bg-teal-900/30 p-2 rounded-xl text-teal-600 dark:text-teal-400">
                                   <Bot size={20} />
                                 </div>
                                 <span className="font-bold text-sage-800 dark:text-white">Yapay Zeka Asistanı</span>
                               </button>
-                              <button onClick={() => { playClick(); setActiveView('leaderboard'); setIsMoreDrawerOpen(false); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-sage-50 dark:hover:bg-neutral-800 rounded-2xl transition-colors">
+                              <button onClick={() => handleProtectedAction(() => { playClick(); setActiveView('leaderboard'); setIsMoreDrawerOpen(false); })} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-sage-50 dark:hover:bg-neutral-800 rounded-2xl transition-colors">
                                 <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-xl text-amber-600 dark:text-amber-400">
                                   <Trophy size={20} />
                                 </div>
                                 <span className="font-bold text-sage-800 dark:text-white">Liderlik Tablosu</span>
                               </button>
-                              <button onClick={() => { playClick(); setActiveView('stats'); setIsMoreDrawerOpen(false); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-sage-50 dark:hover:bg-neutral-800 rounded-2xl transition-colors">
+                              <button onClick={() => handleProtectedAction(() => { playClick(); setActiveView('stats'); setIsMoreDrawerOpen(false); })} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-sage-50 dark:hover:bg-neutral-800 rounded-2xl transition-colors">
                                 <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-xl text-blue-600 dark:text-blue-400">
                                   <BarChart2 size={20} />
                                 </div>
