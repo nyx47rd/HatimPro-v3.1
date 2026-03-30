@@ -176,3 +176,9 @@ body {
   background-size: 300%, 200%;
   background-position: 50% 50%, 50% 50%;
 }
+
+/* Hide OneSignal slidedown prompt icon */
+#onesignal-slidedown-dialog .slidedown-body-icon,
+#onesignal-slidedown-dialog img[alt="notification icon"] {
+  display: none !important;
+}

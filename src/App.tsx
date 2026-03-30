@@ -124,8 +124,10 @@ const LazyLegalPage = React.lazy(() => import('./components/LegalPage').then(mod
 const LazyDataDeletionPage = React.lazy(() => import('./components/DataDeletionPage').then(module => ({ default: module.DataDeletionPage })));
 const LazyGoogleOneTap = React.lazy(() => import('./components/GoogleOneTap').then(module => ({ default: module.GoogleOneTap })));
 const LazyChatPage = React.lazy(() => import('./components/ChatPage').then(module => ({ default: module.ChatPage })));
+const LazyNamazTakipPage = React.lazy(() => import('./components/NamazTakipPage').then(module => ({ default: module.NamazTakipPage })));
+const LazyNotificationSettingsPage = React.lazy(() => import('./components/NotificationSettingsPage').then(module => ({ default: module.NotificationSettingsPage })));
 
-type View = 'home' | 'tasks' | 'history' | 'settings' | 'zikir' | 'hatim-rooms' | 'profile' | 'privacy' | 'terms' | 'data-deletion' | 'leaderboard' | 'stats' | 'chat';
+type View = 'home' | 'tasks' | 'history' | 'settings' | 'zikir' | 'hatim-rooms' | 'profile' | 'privacy' | 'terms' | 'data-deletion' | 'leaderboard' | 'stats' | 'chat' | 'namaz' | 'notification-settings';
 
 class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean}> {
   constructor(props: {children: ReactNode}) {
@@ -248,6 +250,8 @@ function AppContent() {
     if (path === '/chat') return 'chat';
     if (path === '/zikir') return 'zikir';
     if (path === '/hatim-rooms') return 'hatim-rooms';
+    if (path === '/namaz') return 'namaz';
+    if (path === '/notification-settings') return 'notification-settings';
     if (path === '/profile') return 'profile';
     return 'home';
   }, [location.pathname]);
@@ -2198,7 +2202,7 @@ function AppContent() {
                   <Bell size={20} />
                 </div>
                 <div>
-                  <p className="font-bold text-sage-800 dark:text-white">Bildirimler</p>
+                  <p className="font-bold text-sage-800 dark:text-white">Bildirim İzni</p>
                   <p className="text-xs text-sage-600 dark:text-neutral-300">Masaüstü bildirimlerini aç</p>
                 </div>
               </div>
@@ -2213,6 +2217,22 @@ function AppContent() {
                 {Notification.permission === 'granted' ? 'İzin Verildi' : 'İzin Ver'}
               </button>
             </div>
+
+            <button 
+              onClick={() => { playClick(); setActiveView('notification-settings'); }}
+              className="w-full flex items-center justify-between p-4 bg-sage-50 dark:bg-neutral-800 rounded-2xl hover:bg-sage-100 dark:hover:bg-neutral-700 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="bg-white dark:bg-neutral-900 p-2 rounded-lg text-sage-600 dark:text-white">
+                  <SettingsIcon size={20} />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-sage-800 dark:text-white">Bildirim Ayarları</p>
+                  <p className="text-xs text-sage-600 dark:text-neutral-400">Saatleri ve mesajları özelleştirin</p>
+                </div>
+              </div>
+              <ChevronRight size={20} className="text-sage-400" />
+            </button>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -2447,9 +2467,9 @@ function AppContent() {
                   <RotateCcw size={20} strokeWidth={activeView === 'zikir' ? 2.5 : 2} />
                   Zikir
                 </button>
-                <button onClick={() => handleProtectedAction(() => setActiveView('hatim-rooms'))} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'hatim-rooms' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
-                  <Book size={20} strokeWidth={activeView === 'hatim-rooms' ? 2.5 : 2} />
-                  Hatim Odaları
+                <button onClick={() => setActiveView('namaz')} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'namaz' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
+                  <Calendar size={20} strokeWidth={activeView === 'namaz' ? 2.5 : 2} />
+                  Namaz Takip
                 </button>
                 <button onClick={() => { setProfileUsername(undefined); setActiveView('profile'); }} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'profile' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
                   <User size={20} strokeWidth={activeView === 'profile' ? 2.5 : 2} />
@@ -2458,6 +2478,10 @@ function AppContent() {
                 
                 <div className="pt-4 pb-2">
                   <div className="px-4 text-[10px] font-bold text-sage-400 uppercase tracking-wider mb-2">Keşfet & Ayarlar</div>
+                  <button onClick={() => handleProtectedAction(() => setActiveView('hatim-rooms'))} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'hatim-rooms' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
+                    <Book size={20} strokeWidth={activeView === 'hatim-rooms' ? 2.5 : 2} />
+                    Hatim Odaları
+                  </button>
                   <button onClick={() => { playClick(); setActiveView('chat'); }} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'chat' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
                     <Bot size={20} strokeWidth={activeView === 'chat' ? 2.5 : 2} />
                     Yapay Zeka Asistanı
@@ -2690,6 +2714,24 @@ function AppContent() {
                     </div>
                   </div>
                 )}
+                {activeView === 'namaz' && (
+                  <div className="fixed inset-0 md:left-64 z-50 bg-sage-50 dark:bg-black flex justify-center overflow-y-auto">
+                    <div className="w-full max-w-2xl min-h-full relative border-x border-sage-200 dark:border-neutral-900 bg-sage-50 dark:bg-black p-4 md:p-8">
+                      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+                        <LazyNamazTakipPage data={data} setData={setData} />
+                      </Suspense>
+                    </div>
+                  </div>
+                )}
+                {activeView === 'notification-settings' && (
+                  <div className="fixed inset-0 md:left-64 z-50 bg-sage-50 dark:bg-black flex justify-center overflow-y-auto">
+                    <div className="w-full max-w-2xl min-h-full relative border-x border-sage-200 dark:border-neutral-900 bg-sage-50 dark:bg-black p-4 md:p-8">
+                      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+                        <LazyNotificationSettingsPage onBack={() => setActiveView('settings')} />
+                      </Suspense>
+                    </div>
+                  </div>
+                )}
                 {activeView === 'chat' && (
                   <div className="fixed inset-0 md:left-64 z-[70] bg-black flex justify-center overflow-hidden">
                     <div className="w-full max-w-2xl h-full relative border-x border-neutral-900 bg-black">
@@ -2734,11 +2776,11 @@ function AppContent() {
                       <span className="text-[10px] font-medium hidden sm:block">Zikir</span>
                     </button>
                     <button 
-                      onClick={() => handleProtectedAction(() => { playClick(); setActiveView('hatim-rooms'); })}
-                      className={`flex flex-col items-center gap-1 transition-colors ${activeView === 'hatim-rooms' ? 'text-sage-800 dark:text-white' : 'text-sage-400 dark:text-neutral-500'}`}
+                      onClick={() => { playClick(); setActiveView('namaz'); }}
+                      className={`flex flex-col items-center gap-1 transition-colors ${activeView === 'namaz' ? 'text-sage-800 dark:text-white' : 'text-sage-400 dark:text-neutral-500'}`}
                     >
-                      <Book size={22} strokeWidth={activeView === 'hatim-rooms' ? 2.5 : 2} />
-                      <span className="text-[10px] font-medium hidden sm:block">Hatim</span>
+                      <Calendar size={22} strokeWidth={activeView === 'namaz' ? 2.5 : 2} />
+                      <span className="text-[10px] font-medium hidden sm:block">Namaz</span>
                     </button>
                     <button 
                       onClick={() => { 
@@ -2768,6 +2810,12 @@ function AppContent() {
                             <div className="mx-auto w-12 h-1.5 flex-shrink-0 rounded-full bg-sage-200 dark:bg-neutral-800 mb-8" />
                             <div className="max-w-md mx-auto space-y-2">
                               <h3 className="text-xl font-bold text-sage-800 dark:text-white mb-4 px-4">Diğer Seçenekler</h3>
+                              <button onClick={() => handleProtectedAction(() => { playClick(); setActiveView('hatim-rooms'); setIsMoreDrawerOpen(false); })} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-sage-50 dark:hover:bg-neutral-800 rounded-2xl transition-colors">
+                                <div className="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-xl text-indigo-600 dark:text-indigo-400">
+                                  <Book size={20} />
+                                </div>
+                                <span className="font-bold text-sage-800 dark:text-white">Hatim Odaları</span>
+                              </button>
                               <button onClick={() => { playClick(); setActiveView('chat'); setIsMoreDrawerOpen(false); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-sage-50 dark:hover:bg-neutral-800 rounded-2xl transition-colors">
                                 <div className="bg-teal-100 dark:bg-teal-900/30 p-2 rounded-xl text-teal-600 dark:text-teal-400">
                                   <Bot size={20} />

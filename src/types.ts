@@ -26,10 +26,21 @@ export interface AIUsage {
   day: { count: number; timestamp: number };
 }
 
+export interface NamazLog {
+  id: string;
+  date: string; // YYYY-MM-DD
+  fajr: boolean;
+  dhuhr: boolean;
+  asr: boolean;
+  maghrib: boolean;
+  isha: boolean;
+}
+
 export interface HatimData {
   activeTaskId: string;
   tasks: HatimTask[];
   logs: ReadingLog[];
+  namazLogs?: NamazLog[];
   mfaEnabled?: boolean;
   aiUsage?: AIUsage;
   chatHistory?: string; // Encrypted JSON string
