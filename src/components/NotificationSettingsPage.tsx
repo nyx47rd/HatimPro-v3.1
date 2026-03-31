@@ -130,6 +130,37 @@ export function NotificationSettingsPage({ onBack }: Props) {
       await updateDoc(doc(db, 'users', user.uid), {
         notificationSettings: settings
       });
+
+      // If daily reminder is enabled and we have a topic, 
+      // check if we should schedule an immediate reminder for today.
+      if (settings.dailyReminder.enabled && ntfyTopic) {
+        const [hours, minutes] = settings.dailyReminder.time.split(':').map(Number);
+        const now = new Date();
+        
+        // Convert local target time to a Date object for today
+        const targetDate = new Date();
+        targetDate.setHours(hours, minutes, 0, 0);
+
+        // If target time is in the future for today, schedule it via ntfy Delay
+        if (targetDate > now) {
+          const diffMs = targetDate.getTime() - now.getTime();
+          const diffMinutes = Math.floor(diffMs / 60000);
+
+          if (diffMinutes > 0) {
+            await fetch('/api/notifications/send', {
+              method: 'POST',
+              body: JSON.stringify({
+                title: 'HatimPro Günlük Hatırlatıcı',
+                body: settings.dailyReminder.message || "Günlük Kuran okumanızı yapmayı unutmayın.",
+                ntfyTopic: ntfyTopic,
+                delay: `${diffMinutes}m`
+              }),
+              headers: { 'content-type': 'application/json' }
+            }).catch(err => console.error("Immediate schedule error:", err));
+          }
+        }
+      }
+
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (error) {

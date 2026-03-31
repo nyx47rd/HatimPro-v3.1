@@ -14,19 +14,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const bodyText = parsedBody?.body || 'Yeni bildirim!';
   const ntfyTopic = parsedBody?.ntfyTopic;
   const url = parsedBody?.url;
+  const delay = parsedBody?.delay; // Delay in minutes or string like "10m"
 
   if (!ntfyTopic) {
     return res.status(400).json({ error: "ntfyTopic eksik." });
   }
 
   try {
+    const headers: Record<string, string> = {
+      'Title': title,
+      'Click': url ? `${process.env.APP_URL || 'https://hatimpro.vercel.app'}${url}` : '',
+      'Tags': 'mosque,star'
+    };
+
+    if (delay) {
+      headers['Delay'] = typeof delay === 'number' ? `${delay}m` : delay;
+    }
+
     const response = await fetch(`https://ntfy.sh/${ntfyTopic}`, {
       method: 'POST',
-      headers: {
-        'Title': title,
-        'Click': url ? `${process.env.APP_URL || 'https://hatimpro.vercel.app'}${url}` : '',
-        'Tags': 'mosque,star'
-      },
+      headers,
       body: bodyText
     });
 

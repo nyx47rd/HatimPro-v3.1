@@ -173,6 +173,7 @@ async function startServer() {
     const bodyText = parsedBody?.body || 'Yeni bildirim!';
     const ntfyTopic = parsedBody?.ntfyTopic;
     const url = parsedBody?.url;
+    const delay = parsedBody?.delay;
 
     if (!ntfyTopic) {
       return res.status(400).json({ error: "ntfyTopic eksik." });
@@ -186,6 +187,10 @@ async function startServer() {
       
       if (url) {
         headers['Click'] = url.startsWith('http') ? url : `${process.env.APP_URL || ''}${url}`;
+      }
+
+      if (delay) {
+        headers['Delay'] = typeof delay === 'number' ? `${delay}m` : delay;
       }
 
       const response = await fetch(`https://ntfy.sh/${ntfyTopic}`, {
