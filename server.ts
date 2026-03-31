@@ -6,7 +6,6 @@ import dotenv from "dotenv";
 import crypto from "crypto";
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc } from 'firebase/firestore';
-import { Resend } from 'resend';
 
 dotenv.config();
 
@@ -27,8 +26,6 @@ async function startServer() {
   const PORT = 3000;
 
   app.use(bodyParser.json());
-
-  const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
   // Chat Request Endpoint
   app.post("/api/chat/request", async (req, res) => {
@@ -160,12 +157,12 @@ async function startServer() {
     }
   });
 
-  // Subscribe Route (Kept for backward compatibility if needed)
+  // Subscribe Route (Kept for backward compatibility)
   app.post("/api/notifications/subscribe", (req, res) => {
-    res.status(201).json({});
+    res.status(201).json({ message: "ntfy.sh is used for notifications" });
   });
 
-  // Send Email Notification Route (using Resend)
+  // Send Notification Route (using ntfy.sh)
   app.post("/api/notifications/send", async (req, res) => {
     let parsedBody = req.body;
     if (typeof req.body === 'string') {
@@ -174,80 +171,39 @@ async function startServer() {
 
     const title = parsedBody?.title || 'HatimPro Bildirimi';
     const bodyText = parsedBody?.body || 'Yeni bildirim!';
-    const toEmail = parsedBody?.email;
+    const ntfyTopic = parsedBody?.ntfyTopic;
+    const url = parsedBody?.url;
 
-    if (!toEmail) {
-      return res.status(400).json({ error: "E-posta adresi eksik." });
-    }
-
-    if (!resend) {
-      console.log(`[EMAIL SIMULATION] To: ${toEmail}, Subject: ${title}, Body: ${bodyText}`);
-      return res.status(200).json({ message: "E-posta simüle edildi (RESEND_API_KEY eksik)", simulated: true });
+    if (!ntfyTopic) {
+      return res.status(400).json({ error: "ntfyTopic eksik." });
     }
 
     try {
-      const { data, error } = await resend.emails.send({
-        from: 'HatimPro <onboarding@resend.dev>',
-        to: toEmail,
-        subject: title,
-        text: bodyText,
-        html: `
-          <div style="font-family: sans-serif; padding: 20px; background-color: #f4f7f4; border-radius: 10px;">
-            <h2 style="color: #324232;">${title}</h2>
-            <p style="color: #4a664a; font-size: 16px;">${bodyText}</p>
-            <hr style="border-color: #ceddce; margin-top: 20px; margin-bottom: 20px;" />
-            <p style="color: #82a382; font-size: 12px;">Bu e-posta HatimPro tarafından gönderilmiştir.</p>
-          </div>
-        `
-      });
-
-      if (error) {
-        throw new Error(error.message);
+      const headers: Record<string, string> = {
+        'Title': title,
+        'Tags': 'mosque,bell'
+      };
+      
+      if (url) {
+        headers['Click'] = url.startsWith('http') ? url : `${process.env.APP_URL || ''}${url}`;
       }
 
-      res.status(200).json({ message: "E-posta Resend üzerinden gönderildi", id: data?.id });
+      const response = await fetch(`https://ntfy.sh/${ntfyTopic}`, {
+        method: 'POST',
+        headers,
+        body: bodyText
+      });
+
+      if (!response.ok) {
+        throw new Error(`ntfy error: ${response.statusText}`);
+      }
+
+      res.status(200).json({ message: "Bildirim ntfy üzerinden gönderildi" });
     } catch (err: any) {
-      console.error("Error sending email via Resend:", err);
+      console.error("Error sending ntfy notification:", err);
       res.status(500).json({ error: err.message });
     }
   });
-
-  // Background "Cron" to simulate server-side triggers for daily reminders
-  setInterval(async () => {
-    const now = new Date();
-    // Example: Send a reminder every hour at minute 0
-    if (now.getMinutes() === 0) {
-      try {
-        const usersSnapshot = await getDocs(collection(db, 'users'));
-        
-        for (const userDoc of usersSnapshot.docs) {
-          const userData = userDoc.data();
-          const settings = userData.notificationSettings;
-          
-          if (settings?.dailyReminder?.enabled && userData.email) {
-            const [hours, minutes] = (settings.dailyReminder.time || '20:00').split(':').map(Number);
-            
-            // Check if it's the right time (ignoring timezone complexities for this simple example)
-            if (now.getHours() === hours) {
-              if (resend) {
-                await resend.emails.send({
-                  from: 'HatimPro <onboarding@resend.dev>',
-                  to: userData.email,
-                  subject: "HatimPro Günlük Hatırlatıcı",
-                  text: settings.dailyReminder.message || "Günlük Kuran okumanızı yapmayı unutmayın.",
-                  html: `<p>${settings.dailyReminder.message || "Günlük Kuran okumanızı yapmayı unutmayın."}</p>`
-                }).catch(err => console.error("Cron Resend Error:", err));
-              } else {
-                console.log(`[EMAIL SIMULATION] Daily Reminder to ${userData.email}`);
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.error("Cron notification error:", e);
-      }
-    }
-  }, 60000); // Check every minute
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {

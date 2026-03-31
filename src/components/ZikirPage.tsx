@@ -35,7 +35,7 @@ export const ZikirPage: React.FC<ZikirPageProps> = ({ onBack, playClick, joinSes
   
   // Active Task State
   const [activeTask, setActiveTask] = useState<ZikirTask | null>(null);
-  const [mutualFollowers, setMutualFollowers] = useState<{uid: string, username: string, photoURL: string, email?: string}[]>([]);
+  const [mutualFollowers, setMutualFollowers] = useState<{uid: string, username: string, photoURL: string, email?: string, ntfyTopic?: string}[]>([]);
   
   // Create Task Form State
   const [createModalTab, setCreateModalTab] = useState<'create' | 'join'>('create');
@@ -160,7 +160,8 @@ export const ZikirPage: React.FC<ZikirPageProps> = ({ onBack, playClick, joinSes
               uid: userData.uid,
               username: userData.username || userData.displayName || 'İsimsiz',
               photoURL: userData.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.uid}`,
-              email: userData.email
+              email: userData.email,
+              ntfyTopic: userData.ntfyTopic
             });
           }
         }

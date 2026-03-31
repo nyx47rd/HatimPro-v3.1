@@ -1,7 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
-import { Resend } from 'resend';
 
 const firebaseConfig = {
   apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY,
@@ -17,13 +16,12 @@ const db = getFirestore(appFirebase);
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const now = new Date();
-  // Vercel Cron runs in UTC. Turkey is UTC+3.
-  // To check for 20:00 Turkey time, we check for 17:00 UTC.
-  const currentUTCHour = now.getUTCHours();
+  // Cron runs at 00:00 UTC.
+  // We calculate the target UTC hour for each user and use ntfy.sh's Delay header.
   
   try {
     const usersSnapshot = await getDocs(collection(db, 'users'));
-    let sentCount = 0;
+    let scheduledCount = 0;
     
     for (const userDoc of usersSnapshot.docs) {
       const userData = userDoc.data();
@@ -33,26 +31,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (settings?.dailyReminder?.enabled && ntfyTopic) {
         const [hours, minutes] = (settings.dailyReminder.time || '20:00').split(':').map(Number);
         
-        // Convert local hour to UTC (assuming Turkey UTC+3 for now)
-        // This is a simple approximation.
+        // Convert local hour (Turkey UTC+3) to UTC
         const targetUTCHour = (hours - 3 + 24) % 24;
+        const targetUTCMinutes = minutes;
         
-        if (currentUTCHour === targetUTCHour) {
+        // Calculate delay from 00:00 UTC today
+        // Total minutes from 00:00 UTC to target time
+        const totalMinutesDelay = (targetUTCHour * 60) + targetUTCMinutes;
+        
+        // If the target time has already passed today (unlikely if cron runs at 00:00),
+        // we could skip or schedule for tomorrow, but 00:00 is safe.
+        if (totalMinutesDelay >= 0) {
           await fetch(`https://ntfy.sh/${ntfyTopic}`, {
             method: 'POST',
             headers: {
               'Title': 'HatimPro Günlük Hatırlatıcı',
               'Tags': 'mosque,clock8',
-              'Click': process.env.APP_URL || 'https://hatimpro.vercel.app'
+              'Click': process.env.APP_URL || 'https://hatimpro.vercel.app',
+              'Delay': `${totalMinutesDelay}m`
             },
             body: settings.dailyReminder.message || "Günlük Kuran okumanızı yapmayı unutmayın."
           });
-          sentCount++;
+          scheduledCount++;
         }
       }
     }
     
-    return res.status(200).json({ success: true, sentCount, currentUTCHour });
+    return res.status(200).json({ success: true, scheduledCount });
   } catch (error: any) {
     console.error("Cron Error:", error);
     return res.status(500).json({ error: error.message });
