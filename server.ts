@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import crypto from "crypto";
 import { initializeApp, getApps } from 'firebase/app';
 import { getFirestore, doc, setDoc, getDoc, collection, getDocs, addDoc } from 'firebase/firestore';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 dotenv.config();
 
@@ -22,22 +22,13 @@ const firebaseConfig = {
 const appFirebase = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(appFirebase);
 
-// Configure Nodemailer
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
-
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   app.use(bodyParser.json());
+
+  const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
   // Chat Request Endpoint
   app.post("/api/chat/request", async (req, res) => {
@@ -174,7 +165,7 @@ async function startServer() {
     res.status(201).json({});
   });
 
-  // Send Email Notification Route (using Nodemailer)
+  // Send Email Notification Route (using Resend)
   app.post("/api/notifications/send", async (req, res) => {
     let parsedBody = req.body;
     if (typeof req.body === 'string') {
@@ -189,14 +180,14 @@ async function startServer() {
       return res.status(400).json({ error: "E-posta adresi eksik." });
     }
 
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    if (!resend) {
       console.log(`[EMAIL SIMULATION] To: ${toEmail}, Subject: ${title}, Body: ${bodyText}`);
-      return res.status(200).json({ message: "E-posta simüle edildi (SMTP ayarları eksik)", simulated: true });
+      return res.status(200).json({ message: "E-posta simüle edildi (RESEND_API_KEY eksik)", simulated: true });
     }
 
     try {
-      const info = await transporter.sendMail({
-        from: `"HatimPro" <${process.env.SMTP_USER}>`,
+      const { data, error } = await resend.emails.send({
+        from: 'HatimPro <onboarding@resend.dev>',
         to: toEmail,
         subject: title,
         text: bodyText,
@@ -210,9 +201,13 @@ async function startServer() {
         `
       });
 
-      res.status(200).json({ message: "E-posta gönderildi", messageId: info.messageId });
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      res.status(200).json({ message: "E-posta Resend üzerinden gönderildi", id: data?.id });
     } catch (err: any) {
-      console.error("Error sending email:", err);
+      console.error("Error sending email via Resend:", err);
       res.status(500).json({ error: err.message });
     }
   });
@@ -234,13 +229,14 @@ async function startServer() {
             
             // Check if it's the right time (ignoring timezone complexities for this simple example)
             if (now.getHours() === hours) {
-              if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-                await transporter.sendMail({
-                  from: `"HatimPro" <${process.env.SMTP_USER}>`,
+              if (resend) {
+                await resend.emails.send({
+                  from: 'HatimPro <onboarding@resend.dev>',
                   to: userData.email,
                   subject: "HatimPro Günlük Hatırlatıcı",
                   text: settings.dailyReminder.message || "Günlük Kuran okumanızı yapmayı unutmayın.",
-                });
+                  html: `<p>${settings.dailyReminder.message || "Günlük Kuran okumanızı yapmayı unutmayın."}</p>`
+                }).catch(err => console.error("Cron Resend Error:", err));
               } else {
                 console.log(`[EMAIL SIMULATION] Daily Reminder to ${userData.email}`);
               }
