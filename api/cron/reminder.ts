@@ -14,16 +14,12 @@ const firebaseConfig = {
 
 const appFirebase = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(appFirebase);
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Check for Vercel Cron Secret (optional but recommended)
-  // if (req.headers['authorization'] !== `Bearer ${process.env.CRON_SECRET}`) {
-  //   return res.status(401).end('Unauthorized');
-  // }
-
   const now = new Date();
-  // This cron will run every hour (configured in vercel.json)
+  // Vercel Cron runs in UTC. Turkey is UTC+3.
+  // To check for 20:00 Turkey time, we check for 17:00 UTC.
+  const currentUTCHour = now.getUTCHours();
   
   try {
     const usersSnapshot = await getDocs(collection(db, 'users'));
@@ -32,27 +28,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     for (const userDoc of usersSnapshot.docs) {
       const userData = userDoc.data();
       const settings = userData.notificationSettings;
+      const ntfyTopic = userData.ntfyTopic;
       
-      if (settings?.dailyReminder?.enabled && userData.email) {
+      if (settings?.dailyReminder?.enabled && ntfyTopic) {
         const [hours, minutes] = (settings.dailyReminder.time || '20:00').split(':').map(Number);
         
-        // Check if it's the right hour
-        if (now.getHours() === hours) {
-          if (resend) {
-            await resend.emails.send({
-              from: 'HatimPro <onboarding@resend.dev>',
-              to: userData.email,
-              subject: "HatimPro Günlük Hatırlatıcı",
-              text: settings.dailyReminder.message || "Günlük Kuran okumanızı yapmayı unutmayın.",
-              html: `<p>${settings.dailyReminder.message || "Günlük Kuran okumanızı yapmayı unutmayın."}</p>`
-            });
-            sentCount++;
-          }
+        // Convert local hour to UTC (assuming Turkey UTC+3 for now)
+        // This is a simple approximation.
+        const targetUTCHour = (hours - 3 + 24) % 24;
+        
+        if (currentUTCHour === targetUTCHour) {
+          await fetch(`https://ntfy.sh/${ntfyTopic}`, {
+            method: 'POST',
+            headers: {
+              'Title': 'HatimPro Günlük Hatırlatıcı',
+              'Tags': 'mosque,clock8',
+              'Click': process.env.APP_URL || 'https://hatimpro.vercel.app'
+            },
+            body: settings.dailyReminder.message || "Günlük Kuran okumanızı yapmayı unutmayın."
+          });
+          sentCount++;
         }
       }
     }
     
-    return res.status(200).json({ success: true, sentCount });
+    return res.status(200).json({ success: true, sentCount, currentUTCHour });
   } catch (error: any) {
     console.error("Cron Error:", error);
     return res.status(500).json({ error: error.message });

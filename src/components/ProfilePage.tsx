@@ -236,15 +236,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ username, onBack, play
             read: false
           });
 
-          // Send email notification if target user has an email
-          if (profile.email) {
+          // Send ntfy notification if target user has a topic
+          if (profile.ntfyTopic) {
             await fetch('/api/notifications/send', {
               method: 'POST',
               body: JSON.stringify({
                 title: 'Yeni Takipçi',
                 body: `${currentUserProfile.displayName || 'Bir kullanıcı'} seni takip etmeye başladı!`,
                 url: `/profile/${currentUserProfile.username || user.uid}`,
-                email: profile.email
+                ntfyTopic: profile.ntfyTopic
               }),
               headers: { 'content-type': 'application/json' }
             });

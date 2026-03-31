@@ -76,6 +76,7 @@ export interface UserStats {
 export interface UserProfile {
   uid: string;
   email?: string;
+  ntfyTopic?: string;
   username?: string;
   displayName?: string;
   photoURL?: string;

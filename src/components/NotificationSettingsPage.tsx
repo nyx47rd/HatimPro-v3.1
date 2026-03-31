@@ -55,6 +55,7 @@ export function NotificationSettingsPage({ onBack }: Props) {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [prayerTimes, setPrayerTimes] = useState<any>(null);
+  const [ntfyTopic, setNtfyTopic] = useState<string>('');
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -62,8 +63,14 @@ export function NotificationSettingsPage({ onBack }: Props) {
       try {
         const docRef = doc(db, 'users', user.uid);
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().notificationSettings) {
-          setSettings({ ...DEFAULT_SETTINGS, ...docSnap.data().notificationSettings });
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.notificationSettings) {
+            setSettings({ ...DEFAULT_SETTINGS, ...data.notificationSettings });
+          }
+          if (data.ntfyTopic) {
+            setNtfyTopic(data.ntfyTopic);
+          }
         }
       } catch (error) {
         console.error("Error loading notification settings:", error);
@@ -172,9 +179,57 @@ export function NotificationSettingsPage({ onBack }: Props) {
           <ArrowLeft size={24} />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-sage-800 dark:text-white">E-posta Bildirim Ayarları</h1>
-          <p className="text-sm text-sage-500 dark:text-white/60">E-posta bildirim tercihlerinizi yönetin</p>
+          <h1 className="text-2xl font-bold text-sage-800 dark:text-white">Bildirim Ayarları</h1>
+          <p className="text-sm text-sage-500 dark:text-white/60">Bildirim tercihlerinizi yönetin</p>
         </div>
+      </div>
+
+      {/* ntfy.sh Setup */}
+      <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-5 space-y-3">
+        <div className="flex items-center gap-3 text-blue-400">
+          <Bell size={20} />
+          <h3 className="font-bold">Anlık Bildirim Kurulumu (ntfy.sh)</h3>
+        </div>
+        <p className="text-sm text-white/70">
+          Bildirimleri telefonunuzda almak için <b>ntfy</b> uygulamasını indirin ve aşağıdaki konuya abone olun:
+        </p>
+        <div className="bg-black/40 p-3 rounded-xl flex items-center justify-between border border-white/10">
+          <code className="text-blue-400 font-mono text-sm">{ntfyTopic || 'Yükleniyor...'}</code>
+          <button 
+            onClick={() => {
+              navigator.clipboard.writeText(ntfyTopic);
+              alert("Konu kopyalandı!");
+            }}
+            className="text-xs bg-blue-500 text-white px-3 py-1 rounded-lg font-bold"
+          >
+            Kopyala
+          </button>
+        </div>
+        <p className="text-xs text-white/50">
+          * ntfy uygulamasını açın, "+" butonuna basın ve bu konuyu yazın.
+        </p>
+        <button 
+          onClick={async () => {
+            if (!ntfyTopic) return;
+            try {
+              await fetch('/api/notifications/send', {
+                method: 'POST',
+                body: JSON.stringify({
+                  title: 'Test Bildirimi',
+                  body: 'HatimPro bildirim sisteminiz çalışıyor!',
+                  ntfyTopic: ntfyTopic
+                }),
+                headers: { 'content-type': 'application/json' }
+              });
+              alert("Test bildirimi gönderildi! ntfy uygulamasını kontrol edin.");
+            } catch (e) {
+              alert("Hata oluştu.");
+            }
+          }}
+          className="w-full py-2 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold transition-colors"
+        >
+          Test Bildirimi Gönder
+        </button>
       </div>
 
       <div className="space-y-6">

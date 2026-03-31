@@ -70,6 +70,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const newProfile: UserProfile = {
             uid: user.uid,
             email: user.email || undefined,
+            ntfyTopic: `hatimpro_${user.uid.substring(0, 8)}_${Math.random().toString(36).substring(2, 7)}`,
             username: generatedUsername,
             displayName: user.displayName || 'İsimsiz Kullanıcı',
             photoURL: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
@@ -85,10 +86,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           };
           await setDoc(profileRef, newProfile);
         } else {
-          // Update email if missing or different
+          // Update email or ntfyTopic if missing
           const existingData = profileSnap.data() as UserProfile;
+          const updates: any = {};
           if (user.email && existingData.email !== user.email) {
-            await setDoc(profileRef, { email: user.email }, { merge: true });
+            updates.email = user.email;
+          }
+          if (!existingData.ntfyTopic) {
+            updates.ntfyTopic = `hatimpro_${user.uid.substring(0, 8)}_${Math.random().toString(36).substring(2, 7)}`;
+          }
+          if (Object.keys(updates).length > 0) {
+            await setDoc(profileRef, updates, { merge: true });
           }
         }
 

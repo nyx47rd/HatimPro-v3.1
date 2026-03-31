@@ -331,19 +331,19 @@ export const ZikirPage: React.FC<ZikirPageProps> = ({ onBack, playClick, joinSes
         status: 'pending'
       });
 
-      // Send email notification if target user has an email
+      // Send ntfy notification if target user has a topic
       const targetUser = mutualFollowers.find(f => f.uid === inviteeUid);
-      if (targetUser && targetUser.email) {
+      if (targetUser && targetUser.ntfyTopic) {
         await fetch('/api/notifications/send', {
           method: 'POST',
           body: JSON.stringify({
             title: 'Zikir Daveti',
             body: `${profile.username || profile.displayName || 'Bir kullanıcı'} seni "${activeTask.name}" zikrine davet etti!`,
             url: `/zikir?join=${activeTask.id}`,
-            email: targetUser.email
+            ntfyTopic: targetUser.ntfyTopic
           }),
           headers: { 'content-type': 'application/json' }
-        }).catch(err => console.error("Email notification error:", err));
+        }).catch(err => console.error("Notification error:", err));
       }
 
       setInvitedUsers(prev => [...prev, inviteeUid]);
