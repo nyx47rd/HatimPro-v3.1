@@ -69,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           const newProfile: UserProfile = {
             uid: user.uid,
+            email: user.email || undefined,
             username: generatedUsername,
             displayName: user.displayName || 'İsimsiz Kullanıcı',
             photoURL: user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`,
@@ -83,6 +84,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           };
           await setDoc(profileRef, newProfile);
+        } else {
+          // Update email if missing or different
+          const existingData = profileSnap.data() as UserProfile;
+          if (user.email && existingData.email !== user.email) {
+            await setDoc(profileRef, { email: user.email }, { merge: true });
+          }
         }
 
         if (unsubProfile) unsubProfile();

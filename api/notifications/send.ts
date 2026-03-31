@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { Resend } from 'resend';
 
-const ONESIGNAL_APP_ID = process.env.VITE_ONESIGNAL_APP_ID || '61205574-f992-486d-ae82-7b6632beb067';
-const ONESIGNAL_REST_API_KEY = process.env.ONESIGNAL_REST_API_KEY || '';
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -13,77 +13,50 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     try { parsedBody = JSON.parse(req.body); } catch (e) {}
   }
 
-  const title = parsedBody?.title || 'HatimPro';
+  const title = parsedBody?.title || 'HatimPro Bildirimi';
   const bodyText = parsedBody?.body || 'Yeni bildirim!';
-  const url = parsedBody?.url || '/';
-  const subscription = parsedBody?.subscription;
-  
-  if (!ONESIGNAL_APP_ID || !ONESIGNAL_REST_API_KEY) {
-    return res.status(500).json({ error: "OneSignal REST_API_KEY eksik. Lütfen Vercel Environment Variables kısmına ekleyin." });
+  const toEmail = parsedBody?.email;
+
+  if (!toEmail) {
+    return res.status(400).json({ error: "E-posta adresi eksik." });
   }
 
+  if (!RESEND_API_KEY) {
+    console.log(`[EMAIL SIMULATION] To: ${toEmail}, Subject: ${title}, Body: ${bodyText}`);
+    return res.status(200).json({ message: "E-posta simüle edildi (RESEND_API_KEY eksik)", simulated: true });
+  }
+
+  const resend = new Resend(RESEND_API_KEY);
+
   try {
-    const payload: any = {
-      app_id: ONESIGNAL_APP_ID,
-      headings: { en: title, tr: title },
-      contents: { en: bodyText, tr: bodyText },
-      subtitle: { en: bodyText, tr: bodyText },
-      url: url,
-      target_channel: "push"
-    };
-
-    if (subscription) {
-      // Check if it's a OneSignal UUID or a Firebase UID (external_id)
-      if (subscription.includes('-')) {
-        payload.include_subscription_ids = [subscription];
-      } else {
-        payload.include_aliases = {
-          external_id: [subscription]
-        };
-      }
-    } else {
-      // Send to all
-      payload.included_segments = ["Total Subscriptions"];
-    }
-
-    const response = await fetch('https://api.onesignal.com/notifications', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}`
-      },
-      body: JSON.stringify(payload)
+    const { data, error } = await resend.emails.send({
+      from: 'HatimPro <onboarding@resend.dev>',
+      to: toEmail,
+      subject: title,
+      text: bodyText,
+      html: `
+        <div style="font-family: sans-serif; padding: 20px; background-color: #f4f7f4; border-radius: 10px;">
+          <h2 style="color: #324232;">${title}</h2>
+          <p style="color: #4a664a; font-size: 16px;">${bodyText}</p>
+          <hr style="border-color: #ceddce; margin-top: 20px; margin-bottom: 20px;" />
+          <p style="color: #82a382; font-size: 12px;">Bu e-posta HatimPro tarafından gönderilmiştir.</p>
+        </div>
+      `
     });
 
-    const data = await response.json();
-    console.log("OneSignal Send Response:", data);
-    
-    if (response.ok) {
-      if (data.recipients === 0) {
-        return res.status(200).json({ success: true, warning: "Bildirim gönderildi ancak alıcı bulunamadı (recipients: 0). Abonelik ID'si geçersiz olabilir.", data });
-      }
-      return res.status(200).json({ success: true, data });
-    } else {
-      console.error("OneSignal API Error:", data);
-      
-      // Handle invalid_player_ids gracefully
-      if (data.errors && data.errors.invalid_player_ids) {
-        return res.status(200).json({ 
-          success: false, 
-          warning: "Bildirim izniniz geçersiz veya süresi dolmuş. Lütfen tarayıcı ayarlarından bildirim iznini sıfırlayıp tekrar izin verin.", 
-          data 
-        });
-      }
-
-      return res.status(response.status).json({ 
-        error: 'Failed to send notification',
-        details: data.errors ? data.errors[0] : "OneSignal API Hatası" 
+    if (error) {
+      console.error("Resend API Error:", error);
+      return res.status(500).json({ 
+        error: 'Failed to send email',
+        details: error.message 
       });
     }
+
+    return res.status(200).json({ success: true, id: data?.id });
   } catch (error: any) {
-    console.error('Push error:', error);
+    console.error('Email error:', error);
     return res.status(500).json({ 
-      error: 'Failed to send notification',
+      error: 'Failed to send email',
       details: error.message 
     });
   }
