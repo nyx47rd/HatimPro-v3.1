@@ -250,6 +250,7 @@ function AppContent() {
     if (path === '/stats') return 'stats';
     if (path === '/chat') return 'chat';
     if (path === '/zikir') return 'zikir';
+    if (path === '/zikir-arena') return 'zikir-arena';
     if (path === '/hatim-rooms') return 'hatim-rooms';
     if (path === '/namaz') return 'namaz';
     if (path === '/notification-settings') return 'notification-settings';
