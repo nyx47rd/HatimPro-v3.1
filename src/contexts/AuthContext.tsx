@@ -81,7 +81,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               totalZikir: 0, 
               totalReadPages: 0,
               streak: 0,
-              xp: 0
+              xp: 0,
+              zgp: 1000,
+              arenaMatchesPlayed: 0,
+              arenaWins: 0
             }
           };
           await setDoc(profileRef, newProfile);
@@ -94,6 +97,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           if (!existingData.ntfyTopic) {
             updates.ntfyTopic = `hatimpro_${user.uid.substring(0, 8)}_${Math.random().toString(36).substring(2, 7)}`;
+          }
+          if (existingData.stats?.zgp === undefined) {
+            updates['stats.zgp'] = 1000;
+            updates['stats.arenaMatchesPlayed'] = 0;
+            updates['stats.arenaWins'] = 0;
           }
           if (Object.keys(updates).length > 0) {
             await setDoc(profileRef, updates, { merge: true });

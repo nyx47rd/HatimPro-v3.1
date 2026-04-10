@@ -45,7 +45,8 @@ import {
   Fingerprint,
   LogOut,
   UserPlus,
-  Bot
+  Bot,
+  Target
 } from 'lucide-react';
 import { Drawer } from 'vaul';
 import { motion, AnimatePresence } from 'motion/react';
@@ -125,8 +126,9 @@ const LazyGoogleOneTap = React.lazy(() => import('./components/GoogleOneTap').th
 const LazyChatPage = React.lazy(() => import('./components/ChatPage').then(module => ({ default: module.ChatPage })));
 const LazyNamazTakipPage = React.lazy(() => import('./components/NamazTakipPage').then(module => ({ default: module.NamazTakipPage })));
 const LazyNotificationSettingsPage = React.lazy(() => import('./components/NotificationSettingsPage').then(module => ({ default: module.NotificationSettingsPage })));
+const LazyZikirArenaPage = React.lazy(() => import('./components/ZikirArenaPage').then(module => ({ default: module.ZikirArenaPage })));
 
-type View = 'home' | 'tasks' | 'history' | 'settings' | 'zikir' | 'hatim-rooms' | 'profile' | 'privacy' | 'terms' | 'data-deletion' | 'leaderboard' | 'stats' | 'chat' | 'namaz' | 'notification-settings';
+type View = 'home' | 'tasks' | 'history' | 'settings' | 'zikir' | 'hatim-rooms' | 'profile' | 'privacy' | 'terms' | 'data-deletion' | 'leaderboard' | 'stats' | 'chat' | 'namaz' | 'notification-settings' | 'zikir-arena';
 
 class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean}> {
   constructor(props: {children: ReactNode}) {
@@ -2262,6 +2264,10 @@ function AppContent() {
                   <RotateCcw size={20} strokeWidth={activeView === 'zikir' ? 2.5 : 2} />
                   Zikir
                 </button>
+                <button onClick={() => handleProtectedAction(() => setActiveView('zikir-arena'))} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'zikir-arena' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'}`}>
+                  <Target size={20} strokeWidth={activeView === 'zikir-arena' ? 2.5 : 2} className={activeView === 'zikir-arena' ? 'text-purple-600 dark:text-purple-400' : ''} />
+                  Zikir Arena
+                </button>
                 <button onClick={() => handleProtectedAction(() => setActiveView('namaz'))} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'namaz' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
                   <Calendar size={20} strokeWidth={activeView === 'namaz' ? 2.5 : 2} />
                   Namaz Takip
@@ -2452,6 +2458,20 @@ function AppContent() {
                     </div>
                   </div>
                 )}
+                {activeView === 'zikir-arena' && (
+                  <div className="fixed inset-0 md:left-64 z-50 bg-black flex justify-center">
+                    <div className="w-full max-w-2xl h-full relative border-x border-neutral-900 bg-black">
+                      <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div></div>}>
+                        <LazyZikirArenaPage 
+                          onBack={() => {
+                            setActiveView('home');
+                          }} 
+                          playClick={playClick} 
+                        />
+                      </Suspense>
+                    </div>
+                  </div>
+                )}
                 {activeView === 'hatim-rooms' && (
                   <div className="fixed inset-0 md:left-64 z-50 bg-black flex justify-center">
                     <div className="w-full max-w-2xl h-full relative border-x border-neutral-900 bg-black">
@@ -2610,6 +2630,12 @@ function AppContent() {
                                   <Book size={20} />
                                 </div>
                                 <span className="font-bold text-sage-800 dark:text-white">Hatim Odaları</span>
+                              </button>
+                              <button onClick={() => handleProtectedAction(() => { playClick(); setActiveView('zikir-arena'); setIsMoreDrawerOpen(false); })} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-2xl transition-colors">
+                                <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-xl text-purple-600 dark:text-purple-400">
+                                  <Target size={20} />
+                                </div>
+                                <span className="font-bold text-purple-800 dark:text-purple-300">Zikir Arena</span>
                               </button>
                               <button onClick={() => handleProtectedAction(() => { playClick(); setActiveView('chat'); setIsMoreDrawerOpen(false); })} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-sage-50 dark:hover:bg-neutral-800 rounded-2xl transition-colors">
                                 <div className="bg-teal-100 dark:bg-teal-900/30 p-2 rounded-xl text-teal-600 dark:text-teal-400">

@@ -16,7 +16,8 @@ import {
   BookOpen,
   RotateCcw,
   Flame,
-  Shield
+  Shield,
+  Target
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
@@ -525,11 +526,34 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ username, onBack, play
                   </div>
                 </div>
               </div>
+
+              {/* Card 4: Zikir Arena */}
+              <div className="w-[85%] shrink-0 snap-center bg-gradient-to-br from-purple-900/40 to-indigo-900/40 rounded-3xl p-6 border border-white/10 flex flex-col justify-between aspect-[3/2]">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <p className="text-white/60 text-sm font-bold uppercase tracking-wider mb-1">Zikir Arena (ZGP)</p>
+                    <h3 className="text-4xl font-black text-white">{profile?.stats?.zgp ?? 1000} <span className="text-xl text-white/60 font-medium">Puan</span></h3>
+                  </div>
+                  <div className="bg-purple-500/20 p-3 rounded-2xl text-purple-400">
+                    <Target size={24} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-auto">
+                  <div className="bg-black/30 p-3 rounded-2xl flex flex-col items-center justify-center">
+                    <span className="text-xs text-white/60 font-bold uppercase tracking-wider mb-1">Maç</span>
+                    <span className="text-lg font-bold text-white">{profile?.stats?.arenaMatchesPlayed || 0}</span>
+                  </div>
+                  <div className="bg-black/30 p-3 rounded-2xl flex flex-col items-center justify-center">
+                    <span className="text-xs text-white/60 font-bold uppercase tracking-wider mb-1">Galibiyet</span>
+                    <span className="text-lg font-bold text-purple-400">{profile?.stats?.arenaWins || 0}</span>
+                  </div>
+                </div>
+              </div>
             </div>
             
             {/* Pagination Dots */}
             <div className="flex justify-center gap-2 mt-2">
-              {[0, 1, 2].map(idx => (
+              {[0, 1, 2, 3].map(idx => (
                 <div 
                   key={idx} 
                   className={`h-1.5 rounded-full transition-all duration-300 ${activeSlide === idx ? 'w-6 bg-white' : 'w-1.5 bg-white/20'}`}

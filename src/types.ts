@@ -71,6 +71,9 @@ export interface UserStats {
   lastReadingDate?: string;
   trustScore?: number;
   totalReadingTime?: number; // in seconds
+  zgp?: number; // Zikir Güven Puanı
+  arenaMatchesPlayed?: number;
+  arenaWins?: number;
 }
 
 export interface UserProfile {

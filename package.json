@@ -21,6 +21,8 @@
     "@tailwindcss/vite": "^4.1.14",
     "@vercel/functions": "^3.4.3",
     "@vitejs/plugin-react": "^5.0.4",
+    "agora-rtc-react": "^2.5.1",
+    "agora-rtc-sdk-ng": "^4.24.3",
     "better-sqlite3": "^12.4.1",
     "canvas-confetti": "^1.9.4",
     "dotenv": "^17.2.3",
