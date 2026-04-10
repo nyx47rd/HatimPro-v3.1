@@ -37,14 +37,20 @@ export function ZikirArenaPage({ onBack, playClick }: Props) {
 
   const zgp = profile?.stats?.zgp ?? 1000;
 
+  const statusRef = React.useRef(status);
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
   // Cleanup on unmount
   useEffect(() => {
+    const currentUid = user?.uid;
     return () => {
-      if (status === 'searching' && user) {
-        cancelSearch();
+      if (statusRef.current === 'searching' && currentUid) {
+        deleteDoc(doc(db, 'arena_matchmaking', currentUid)).catch(console.error);
       }
     };
-  }, [status, user]);
+  }, [user?.uid]);
 
   // AI Guardian - Speech Recognition
   useEffect(() => {
@@ -329,7 +335,9 @@ export function ZikirArenaPage({ onBack, playClick }: Props) {
             setStatus('active');
             // Set end time if not set locally
             if (data.endTime) {
-              const end = data.endTime.toDate().getTime();
+              const end = typeof data.endTime.toDate === 'function' 
+                ? data.endTime.toDate().getTime() 
+                : (data.endTime instanceof Date ? data.endTime.getTime() : (typeof data.endTime === 'number' ? data.endTime : Date.now() + 300000));
               const now = Date.now();
               setTimeLeft(Math.max(0, Math.floor((end - now) / 1000)));
             }
@@ -350,6 +358,7 @@ export function ZikirArenaPage({ onBack, playClick }: Props) {
       let timer: NodeJS.Timeout;
       if (status === 'matched') {
         timer = setTimeout(() => {
+          setStatus('active');
           const endTime = new Date(Date.now() + 5 * 60 * 1000);
           updateDoc(doc(db, 'arena_matches', matchId), { 
             status: 'active',
@@ -367,7 +376,7 @@ export function ZikirArenaPage({ onBack, playClick }: Props) {
 
   // Timer countdown
   useEffect(() => {
-    if (status === 'active' && timeLeft > 0) {
+    if (status === 'active') {
       const interval = setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
@@ -380,7 +389,7 @@ export function ZikirArenaPage({ onBack, playClick }: Props) {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [status, timeLeft]);
+  }, [status]);
 
   const updateUserStats = async (result: 'win' | 'loss' | 'draw') => {
     if (!user || !profile) return;
