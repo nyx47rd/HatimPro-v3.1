@@ -4,7 +4,6 @@ import { ArrowLeft, Target, Users, Search, X, Trophy, ShieldAlert, Clock, Mic } 
 import { doc, setDoc, getDoc, onSnapshot, collection, query, where, getDocs, deleteDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import AgoraRTC, { IAgoraRTCClient, IMicrophoneAudioTrack } from 'agora-rtc-sdk-ng';
 
 interface Props {
   onBack: () => void;
@@ -30,9 +29,7 @@ export function ZikirArenaPage({ onBack, playClick }: Props) {
   const [guardianMessage, setGuardianMessage] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
 
-  // Agora State
-  const [agoraClient, setAgoraClient] = useState<IAgoraRTCClient | null>(null);
-  const [localAudioTrack, setLocalAudioTrack] = useState<IMicrophoneAudioTrack | null>(null);
+  // Voice Chat State
   const [isVoiceConnected, setIsVoiceConnected] = useState(false);
 
   const zgp = profile?.stats?.zgp ?? 1000;
@@ -55,6 +52,7 @@ export function ZikirArenaPage({ onBack, playClick }: Props) {
   // AI Guardian - Speech Recognition
   useEffect(() => {
     let recognition: any = null;
+    let isMounted = true;
 
     if (status === 'active' && matchId && user) {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -66,10 +64,11 @@ export function ZikirArenaPage({ onBack, playClick }: Props) {
         recognition.lang = 'tr-TR';
 
         recognition.onstart = () => {
-          setIsListening(true);
+          if (isMounted) setIsListening(true);
         };
 
         recognition.onresult = (event: any) => {
+          if (!isMounted) return;
           let interimTranscript = '';
           let finalTranscript = '';
 
@@ -109,23 +108,25 @@ export function ZikirArenaPage({ onBack, playClick }: Props) {
               });
               
               // Clear message after 3 seconds
-              setTimeout(() => setGuardianMessage(null), 3000);
+              setTimeout(() => {
+                if (isMounted) setGuardianMessage(null);
+              }, 3000);
             }
           }
         };
 
         recognition.onerror = (event: any) => {
           console.error("Speech recognition error", event.error);
-          setIsListening(false);
+          if (isMounted) setIsListening(false);
         };
 
         recognition.onend = () => {
-          // Restart if still active
-          if (status === 'active') {
+          // Restart if still active and mounted
+          if (isMounted && status === 'active') {
             try {
               recognition.start();
             } catch (e) {}
-          } else {
+          } else if (isMounted) {
             setIsListening(false);
           }
         };
@@ -141,62 +142,126 @@ export function ZikirArenaPage({ onBack, playClick }: Props) {
     }
 
     return () => {
+      isMounted = false;
       if (recognition) {
         try {
           recognition.stop();
         } catch (e) {}
       }
+      setIsListening(false);
     };
   }, [status, matchId, user, targetZikir]);
 
-  // Agora Voice Chat
+  // Simple WebRTC Voice Chat
   useEffect(() => {
-    let client: IAgoraRTCClient | null = null;
-    let audioTrack: IMicrophoneAudioTrack | null = null;
+    let pc: RTCPeerConnection | null = null;
+    let localStream: MediaStream | null = null;
+    let isMounted = true;
+    let unsubs: (() => void)[] = [];
 
-    const initAgora = async () => {
-      const appId = import.meta.env.VITE_AGORA_APP_ID;
-      if (!appId) {
-        console.warn("Agora App ID not found. Voice chat disabled.");
-        return;
-      }
-
+    const initWebRTC = async () => {
       try {
-        client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
-        setAgoraClient(client);
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        if (!isMounted) {
+          localStream.getTracks().forEach(t => t.stop());
+          return;
+        }
 
-        client.on('user-published', async (user, mediaType) => {
-          await client!.subscribe(user, mediaType);
-          if (mediaType === 'audio') {
-            user.audioTrack?.play();
-          }
+        pc = new RTCPeerConnection({
+          iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
         });
 
-        // Join channel using matchId
-        await client.join(appId, matchId!, null, user?.uid);
+        localStream.getTracks().forEach(track => {
+          pc?.addTrack(track, localStream!);
+        });
+
+        pc.ontrack = (event) => {
+          const remoteAudio = new Audio();
+          remoteAudio.srcObject = event.streams[0];
+          remoteAudio.play().catch(console.error);
+        };
+
+        const matchRef = doc(db, 'arena_matches', matchId!);
+        const matchSnap = await getDoc(matchRef);
+        const data = matchSnap.data();
+        if (!data || !isMounted) return;
         
-        // Create and publish local audio track
-        audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-        setLocalAudioTrack(audioTrack);
-        await client.publish([audioTrack]);
+        const players = Object.keys(data.players);
+        players.sort();
+        const isCaller = players[0] === user?.uid;
+
+        pc.onicecandidate = (event) => {
+          if (event.candidate) {
+            const candidateDoc = doc(collection(matchRef, isCaller ? 'callerCandidates' : 'calleeCandidates'));
+            setDoc(candidateDoc, event.candidate.toJSON());
+          }
+        };
+
+        if (isCaller) {
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          await updateDoc(matchRef, { offer: { type: offer.type, sdp: offer.sdp } });
+
+          const unsubAnswer = onSnapshot(matchRef, (snap) => {
+            const data = snap.data();
+            if (data?.answer && !pc?.currentRemoteDescription) {
+              const answer = new RTCSessionDescription(data.answer);
+              pc?.setRemoteDescription(answer);
+            }
+          });
+          unsubs.push(unsubAnswer);
+
+          const unsubCandidates = onSnapshot(collection(matchRef, 'calleeCandidates'), (snap) => {
+            snap.docChanges().forEach((change) => {
+              if (change.type === 'added') {
+                const candidate = new RTCIceCandidate(change.doc.data());
+                pc?.addIceCandidate(candidate);
+              }
+            });
+          });
+          unsubs.push(unsubCandidates);
+        } else {
+          const unsubOffer = onSnapshot(matchRef, async (snap) => {
+            const data = snap.data();
+            if (data?.offer && !pc?.currentRemoteDescription) {
+              const offer = new RTCSessionDescription(data.offer);
+              await pc?.setRemoteDescription(offer);
+              const answer = await pc?.createAnswer();
+              await pc?.setLocalDescription(answer);
+              await updateDoc(matchRef, { answer: { type: answer.type, sdp: answer.sdp } });
+            }
+          });
+          unsubs.push(unsubOffer);
+
+          const unsubCandidates = onSnapshot(collection(matchRef, 'callerCandidates'), (snap) => {
+            snap.docChanges().forEach((change) => {
+              if (change.type === 'added') {
+                const candidate = new RTCIceCandidate(change.doc.data());
+                pc?.addIceCandidate(candidate);
+              }
+            });
+          });
+          unsubs.push(unsubCandidates);
+        }
         
-        setIsVoiceConnected(true);
+        if (isMounted) setIsVoiceConnected(true);
       } catch (error) {
-        console.error("Agora init error:", error);
+        console.error("WebRTC init error:", error);
       }
     };
 
     if (status === 'active' && matchId) {
-      initAgora();
+      initWebRTC();
     }
 
     return () => {
-      if (audioTrack) {
-        audioTrack.stop();
-        audioTrack.close();
+      isMounted = false;
+      unsubs.forEach(unsub => unsub());
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
       }
-      if (client) {
-        client.leave();
+      if (pc) {
+        pc.close();
       }
       setIsVoiceConnected(false);
     };
