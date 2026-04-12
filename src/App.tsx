@@ -116,7 +116,6 @@ const LazyZikirPage = React.lazy(() => import('./components/ZikirPage').then(mod
 const LazyProfilePage = React.lazy(() => import('./components/ProfilePage').then(module => ({ default: module.ProfilePage })));
 const LazyLeaderboardPage = React.lazy(() => import('./components/LeaderboardPage').then(module => ({ default: module.LeaderboardPage })));
 const LazyStatsPage = React.lazy(() => import('./components/StatsPage').then(module => ({ default: module.StatsPage })));
-const LazyNotificationsPanel = React.lazy(() => import('./components/NotificationsPanel').then(module => ({ default: module.NotificationsPanel })));
 const LazyHatimRoomsPage = React.lazy(() => import('./components/HatimRoomsPage').then(module => ({ default: module.HatimRoomsPage })));
 const LazyTutorialOverlay = React.lazy(() => import('./components/TutorialOverlay').then(module => ({ default: module.TutorialOverlay })));
 const LazyQuranReader = React.lazy(() => import('./components/QuranReader').then(module => ({ default: module.QuranReader })));
@@ -125,10 +124,8 @@ const LazyDataDeletionPage = React.lazy(() => import('./components/DataDeletionP
 const LazyGoogleOneTap = React.lazy(() => import('./components/GoogleOneTap').then(module => ({ default: module.GoogleOneTap })));
 const LazyChatPage = React.lazy(() => import('./components/ChatPage').then(module => ({ default: module.ChatPage })));
 const LazyNamazTakipPage = React.lazy(() => import('./components/NamazTakipPage').then(module => ({ default: module.NamazTakipPage })));
-const LazyNotificationSettingsPage = React.lazy(() => import('./components/NotificationSettingsPage').then(module => ({ default: module.NotificationSettingsPage })));
-const LazyZikirArenaPage = React.lazy(() => import('./components/ZikirArenaPage').then(module => ({ default: module.ZikirArenaPage })));
 
-type View = 'home' | 'tasks' | 'history' | 'settings' | 'zikir' | 'hatim-rooms' | 'profile' | 'privacy' | 'terms' | 'data-deletion' | 'leaderboard' | 'stats' | 'chat' | 'namaz' | 'notification-settings' | 'zikir-arena';
+type View = 'home' | 'tasks' | 'history' | 'settings' | 'zikir' | 'hatim-rooms' | 'profile' | 'privacy' | 'terms' | 'data-deletion' | 'leaderboard' | 'stats' | 'chat' | 'namaz';
 
 class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean}> {
   constructor(props: {children: ReactNode}) {
@@ -250,10 +247,8 @@ function AppContent() {
     if (path === '/stats') return 'stats';
     if (path === '/chat') return 'chat';
     if (path === '/zikir') return 'zikir';
-    if (path === '/zikir-arena') return 'zikir-arena';
     if (path === '/hatim-rooms') return 'hatim-rooms';
     if (path === '/namaz') return 'namaz';
-    if (path === '/notification-settings') return 'notification-settings';
     if (path === '/profile') return 'profile';
     return 'home';
   }, [location.pathname]);
@@ -263,7 +258,6 @@ function AppContent() {
     else navigate(`/${view}`);
   };
 
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [zikirJoinSessionId, setZikirJoinSessionId] = useState<string | null>(null);
   const [hatimJoinSessionId, setHatimJoinSessionId] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -333,45 +327,6 @@ function AppContent() {
     window.addEventListener('error', handleError);
     return () => window.removeEventListener('error', handleError);
   }, []);
-  
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
-
-  useEffect(() => {
-    if (!user) {
-      setUnreadNotifications(0);
-      return;
-    }
-    isInitialNotifLoad.current = true;
-    const q = query(collection(db, 'notifications'), where('userId', '==', user.uid), where('read', '==', false));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setUnreadNotifications(snapshot.docs.length);
-      
-      if (!isInitialNotifLoad.current && Notification.permission === 'granted') {
-        snapshot.docChanges().forEach((change) => {
-          if (change.type === 'added') {
-            const notif = change.doc.data() as any;
-            let body = 'Yeni bir bildiriminiz var.';
-            if (notif.type === 'zikir_invite') {
-              body = `${notif.senderName} sizi ${notif.sessionName} zikrine davet etti.`;
-            } else if (notif.type === 'new_follower') {
-              body = `${notif.senderName} sizi takip etmeye başladı.`;
-            } else if (notif.type === 'system_announcement') {
-              body = notif.title || notif.message || 'Sistem duyurusu.';
-            }
-
-            new Notification('HatimPro', {
-              body: body,
-              icon: '/favicon.svg'
-            });
-          }
-        });
-      }
-      isInitialNotifLoad.current = false;
-    }, (error) => {
-      console.error("Notifications snapshot error:", error);
-    });
-    return () => unsubscribe();
-  }, [user]);
   
   const [legalType, setLegalType] = useState<'privacy' | 'terms' | null>(null);
 
@@ -673,7 +628,6 @@ function AppContent() {
 
   const isFirebaseSyncing = useRef(false);
   const isInitialLoad = useRef(true);
-  const isInitialNotifLoad = useRef(true);
 
   // Check 2FA Enrollment status
   useEffect(() => {
@@ -2016,22 +1970,6 @@ function AppContent() {
           <h3 className="text-sm font-bold text-sage-500 dark:text-white uppercase tracking-widest mb-4">Uygulama Ayarları</h3>
           
           <div className="space-y-6">
-            <button 
-              onClick={() => { playClick(); setActiveView('notification-settings'); }}
-              className="w-full flex items-center justify-between p-4 bg-sage-50 dark:bg-neutral-800 rounded-2xl hover:bg-sage-100 dark:hover:bg-neutral-700 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-white dark:bg-neutral-900 p-2 rounded-lg text-sage-600 dark:text-white">
-                  <SettingsIcon size={20} />
-                </div>
-                <div className="text-left">
-                  <p className="font-bold text-sage-800 dark:text-white">E-posta Bildirim Ayarları</p>
-                  <p className="text-xs text-sage-600 dark:text-neutral-400">E-posta tercihlerinizi yönetin</p>
-                </div>
-              </div>
-              <ChevronRight size={20} className="text-sage-400" />
-            </button>
-
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-sage-50 dark:bg-neutral-800 p-2 rounded-lg text-sage-600 dark:text-white">
@@ -2265,10 +2203,6 @@ function AppContent() {
                   <RotateCcw size={20} strokeWidth={activeView === 'zikir' ? 2.5 : 2} />
                   Zikir
                 </button>
-                <button onClick={() => handleProtectedAction(() => setActiveView('zikir-arena'))} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'zikir-arena' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'}`}>
-                  <Target size={20} strokeWidth={activeView === 'zikir-arena' ? 2.5 : 2} className={activeView === 'zikir-arena' ? 'text-purple-600 dark:text-purple-400' : ''} />
-                  Zikir Arena
-                </button>
                 <button onClick={() => handleProtectedAction(() => setActiveView('namaz'))} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'namaz' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
                   <Calendar size={20} strokeWidth={activeView === 'namaz' ? 2.5 : 2} />
                   Namaz Takip
@@ -2318,15 +2252,6 @@ function AppContent() {
                   >
                     <HelpCircle size={20} />
                   </button>
-                  <button 
-                    onClick={() => { setIsNotificationsOpen(true); }}
-                    className="relative p-2 text-white bg-sage-500 hover:bg-sage-600 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-full transition-colors"
-                  >
-                    <Bell size={20} />
-                    {unreadNotifications > 0 && (
-                      <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-neutral-900"></span>
-                    )}
-                  </button>
                   {user && (
                     <button 
                       onClick={handleLogout}
@@ -2370,15 +2295,6 @@ function AppContent() {
                       className="relative p-2 text-white bg-sage-500 hover:bg-sage-600 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-full transition-colors"
                     >
                       <HelpCircle size={24} />
-                    </button>
-                    <button 
-                      onClick={() => { playClick(); setIsNotificationsOpen(true); }}
-                      className="relative p-2 text-white bg-sage-500 hover:bg-sage-600 dark:bg-neutral-800 dark:hover:bg-neutral-700 rounded-full transition-colors"
-                    >
-                      <Bell size={24} />
-                      {unreadNotifications > 0 && (
-                        <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-neutral-900"></span>
-                      )}
                     </button>
                     {user && (
                       <button 
@@ -2459,20 +2375,6 @@ function AppContent() {
                     </div>
                   </div>
                 )}
-                {activeView === 'zikir-arena' && (
-                  <div className="fixed inset-0 md:left-64 z-50 bg-black flex justify-center">
-                    <div className="w-full max-w-2xl h-full relative border-x border-neutral-900 bg-black">
-                      <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div></div>}>
-                        <LazyZikirArenaPage 
-                          onBack={() => {
-                            setActiveView('home');
-                          }} 
-                          playClick={playClick} 
-                        />
-                      </Suspense>
-                    </div>
-                  </div>
-                )}
                 {activeView === 'hatim-rooms' && (
                   <div className="fixed inset-0 md:left-64 z-50 bg-black flex justify-center">
                     <div className="w-full max-w-2xl h-full relative border-x border-neutral-900 bg-black">
@@ -2535,15 +2437,6 @@ function AppContent() {
                     <div className="w-full max-w-2xl min-h-full relative border-x border-sage-200 dark:border-neutral-900 bg-sage-50 dark:bg-black p-4 md:p-8">
                       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LazyNamazTakipPage data={data} setData={setData} />
-                      </Suspense>
-                    </div>
-                  </div>
-                )}
-                {activeView === 'notification-settings' && (
-                  <div className="fixed inset-0 md:left-64 z-50 bg-sage-50 dark:bg-black flex justify-center overflow-y-auto">
-                    <div className="w-full max-w-2xl min-h-full relative border-x border-sage-200 dark:border-neutral-900 bg-sage-50 dark:bg-black p-4 md:p-8">
-                      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin"></div></div>}>
-                        <LazyNotificationSettingsPage onBack={() => setActiveView('settings')} />
                       </Suspense>
                     </div>
                   </div>
@@ -2631,12 +2524,6 @@ function AppContent() {
                                   <Book size={20} />
                                 </div>
                                 <span className="font-bold text-sage-800 dark:text-white">Hatim Odaları</span>
-                              </button>
-                              <button onClick={() => handleProtectedAction(() => { playClick(); setActiveView('zikir-arena'); setIsMoreDrawerOpen(false); })} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-2xl transition-colors">
-                                <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-xl text-purple-600 dark:text-purple-400">
-                                  <Target size={20} />
-                                </div>
-                                <span className="font-bold text-purple-800 dark:text-purple-300">Zikir Arena</span>
                               </button>
                               <button onClick={() => handleProtectedAction(() => { playClick(); setActiveView('chat'); setIsMoreDrawerOpen(false); })} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-sage-50 dark:hover:bg-neutral-800 rounded-2xl transition-colors">
                                 <div className="bg-teal-100 dark:bg-teal-900/30 p-2 rounded-xl text-teal-600 dark:text-teal-400">
@@ -3281,18 +3168,6 @@ function AppContent() {
           </div>
         )}
       </AnimatePresence>
-
-      <Suspense fallback={null}>
-        <LazyNotificationsPanel 
-          isOpen={isNotificationsOpen} 
-          onClose={() => setIsNotificationsOpen(false)} 
-          onJoinSession={(sessionId) => {
-            setZikirJoinSessionId(sessionId);
-            setActiveView('zikir');
-          }}
-          playClick={playClick}
-        />
-      </Suspense>
     </div>
   );
 }
