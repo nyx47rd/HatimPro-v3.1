@@ -269,6 +269,7 @@ function AppContent() {
   const [hatimJoinSessionId, setHatimJoinSessionId] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isMoreDrawerOpen, setIsMoreDrawerOpen] = useState(false);
+  const [previousView, setPreviousView] = useState<View | null>(null);
 
   const handleLogout = async () => {
     try {
@@ -340,7 +341,8 @@ function AppContent() {
   // Auth Enforcement
   const handleProtectedAction = (action: () => void) => {
     if (!user) {
-      setIsAuthModalOpen(true);
+      setIsMoreDrawerOpen(false);
+      setTimeout(() => setIsAuthModalOpen(true), 150);
     } else {
       action();
     }
@@ -2210,8 +2212,14 @@ function AppContent() {
                   localStorage.setItem('guest_mode', 'true');
                   setActiveView('home');
                 }} 
-                onPrivacyClick={() => setActiveView('privacy')}
-                onTermsClick={() => setActiveView('terms')}
+                onPrivacyClick={() => {
+                  setPreviousView('landing');
+                  setActiveView('privacy');
+                }}
+                onTermsClick={() => {
+                  setPreviousView('landing');
+                  setActiveView('terms');
+                }}
               />
             </Suspense>
           </motion.div>
@@ -2433,27 +2441,30 @@ function AppContent() {
                   </div>
                 )}
                 {activeView === 'privacy' && (
-                  <div className="fixed inset-0 md:left-64 z-50 bg-sage-50 dark:bg-black flex justify-center overflow-y-auto">
+                  <div className={`fixed inset-0 ${previousView !== 'landing' ? 'md:left-64' : ''} z-50 bg-sage-50 dark:bg-black flex justify-center overflow-y-auto`}>
                     <div className="w-full max-w-2xl min-h-full relative border-x border-sage-200 dark:border-neutral-900 bg-sage-50 dark:bg-black">
                       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LazyLegalPage 
                           type="privacy" 
                           onBack={() => {
-                            setActiveView('settings');
+                            setActiveView(previousView || 'settings');
+                            setPreviousView(null);
                           }} 
                         />
                       </Suspense>
                     </div>
                   </div>
                 )}
+
                 {activeView === 'terms' && (
-                  <div className="fixed inset-0 md:left-64 z-50 bg-sage-50 dark:bg-black flex justify-center overflow-y-auto">
+                  <div className={`fixed inset-0 ${previousView !== 'landing' ? 'md:left-64' : ''} z-50 bg-sage-50 dark:bg-black flex justify-center overflow-y-auto`}>
                     <div className="w-full max-w-2xl min-h-full relative border-x border-sage-200 dark:border-neutral-900 bg-sage-50 dark:bg-black">
                       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LazyLegalPage 
                           type="terms" 
                           onBack={() => {
-                            setActiveView('settings');
+                            setActiveView(previousView || 'settings');
+                            setPreviousView(null);
                           }} 
                         />
                       </Suspense>
