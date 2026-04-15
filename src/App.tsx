@@ -112,6 +112,7 @@ const recalculateTaskLogs = (logs: ReadingLog[], task: HatimTask) => {
   };
 };
 
+const LazyLandingPage = React.lazy(() => import('./components/LandingPage').then(module => ({ default: module.LandingPage })));
 const LazyZikirPage = React.lazy(() => import('./components/ZikirPage').then(module => ({ default: module.ZikirPage })));
 const LazyProfilePage = React.lazy(() => import('./components/ProfilePage').then(module => ({ default: module.ProfilePage })));
 const LazyLeaderboardPage = React.lazy(() => import('./components/LeaderboardPage').then(module => ({ default: module.LeaderboardPage })));
@@ -125,7 +126,7 @@ const LazyGoogleOneTap = React.lazy(() => import('./components/GoogleOneTap').th
 const LazyChatPage = React.lazy(() => import('./components/ChatPage').then(module => ({ default: module.ChatPage })));
 const LazyNamazTakipPage = React.lazy(() => import('./components/NamazTakipPage').then(module => ({ default: module.NamazTakipPage })));
 
-type View = 'home' | 'tasks' | 'history' | 'settings' | 'zikir' | 'hatim-rooms' | 'profile' | 'privacy' | 'terms' | 'data-deletion' | 'leaderboard' | 'stats' | 'chat' | 'namaz';
+type View = 'landing' | 'home' | 'tasks' | 'history' | 'settings' | 'zikir' | 'hatim-rooms' | 'profile' | 'privacy' | 'terms' | 'data-deletion' | 'leaderboard' | 'stats' | 'chat' | 'namaz';
 
 class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean}> {
   constructor(props: {children: ReactNode}) {
@@ -234,6 +235,11 @@ function AppContent() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const { user, profile, loading: authLoading } = useAuth();
+  const [isGuestMode, setIsGuestMode] = useState(() => {
+    return localStorage.getItem('guest_mode') === 'true';
+  });
+
   const activeView = useMemo<View>(() => {
     const path = location.pathname;
     if (path.startsWith('/@')) return 'profile';
@@ -250,11 +256,12 @@ function AppContent() {
     if (path === '/hatim-rooms') return 'hatim-rooms';
     if (path === '/namaz') return 'namaz';
     if (path === '/profile') return 'profile';
+    if (path === '/' && !user && !isGuestMode && !authLoading) return 'landing';
     return 'home';
-  }, [location.pathname]);
+  }, [location.pathname, user, isGuestMode, authLoading]);
 
   const setActiveView = (view: View) => {
-    if (view === 'home') navigate('/');
+    if (view === 'home' || view === 'landing') navigate('/');
     else navigate(`/${view}`);
   };
 
@@ -262,8 +269,6 @@ function AppContent() {
   const [hatimJoinSessionId, setHatimJoinSessionId] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isMoreDrawerOpen, setIsMoreDrawerOpen] = useState(false);
-
-  const { user, profile, loading: authLoading } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -273,6 +278,8 @@ function AppContent() {
       // Full reset logic to clear local data
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem('local_zikir_tasks');
+      localStorage.removeItem('guest_mode');
+      setIsGuestMode(false);
       
       const initialTaskId = crypto.randomUUID();
       setData({
@@ -1713,6 +1720,19 @@ function AppContent() {
                 >
                   Giriş Yap / Kayıt Ol
                 </LiquidGlassButton>
+                {isGuestMode && (
+                  <button 
+                    onClick={() => {
+                      playClick();
+                      localStorage.removeItem('guest_mode');
+                      setIsGuestMode(false);
+                      setActiveView('landing');
+                    }}
+                    className="w-full py-3 text-sage-600 font-bold bg-sage-50 rounded-xl hover:bg-sage-100 transition-colors mt-2"
+                  >
+                    Ana Ekrana Dön
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -2174,6 +2194,27 @@ function AppContent() {
           <div key="loading" className="fixed inset-0 bg-black flex items-center justify-center">
             <div className="w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin" />
           </div>
+        ) : activeView === 'landing' ? (
+          <motion.div
+            key="landing"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin"></div></div>}>
+              <LazyLandingPage 
+                onLoginClick={() => setIsAuthModalOpen(true)} 
+                onGuestClick={() => {
+                  setIsGuestMode(true);
+                  localStorage.setItem('guest_mode', 'true');
+                  setActiveView('home');
+                }} 
+                onPrivacyClick={() => setActiveView('privacy')}
+                onTermsClick={() => setActiveView('terms')}
+              />
+            </Suspense>
+          </motion.div>
         ) : (
           <motion.div
             key="app-content"
