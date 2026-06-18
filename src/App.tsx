@@ -2519,7 +2519,7 @@ function AppContent() {
                 {activeView === 'settings' && renderSettings()}
                 {activeView === 'profile' && (
                   <div className="fixed inset-0 md:left-64 z-50 bg-black flex justify-center overflow-y-auto">
-                    <div className="w-full max-w-2xl min-h-full relative border-x border-neutral-900 bg-black">
+                    <div className="w-full max-w-5xl min-h-full relative bg-black">
                       <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LazyProfilePage 
                           username={profileUsername} 
@@ -2534,7 +2534,7 @@ function AppContent() {
                 )}
                 {activeView === 'leaderboard' && (
                   <div className="fixed inset-0 md:left-64 z-50 bg-black flex justify-center overflow-y-auto">
-                    <div className="w-full max-w-2xl min-h-full relative border-x border-neutral-900 bg-black">
+                    <div className="w-full max-w-5xl min-h-full relative bg-black">
                       <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LazyLeaderboardPage 
                           onBack={() => {
@@ -2549,7 +2549,7 @@ function AppContent() {
                 )}
                 {activeView === 'stats' && (
                   <div className="fixed inset-0 md:left-64 z-50 bg-black flex justify-center overflow-y-auto">
-                    <div className="w-full max-w-2xl min-h-full relative border-x border-neutral-900 bg-black">
+                    <div className="w-full max-w-5xl min-h-full relative bg-black">
                       <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LazyStatsPage 
                           data={data}
@@ -2565,7 +2565,7 @@ function AppContent() {
                 )}
                 {activeView === 'zikir' && (
                   <div className="fixed inset-0 md:left-64 z-50 bg-black flex justify-center">
-                    <div className="w-full max-w-2xl h-full relative border-x border-neutral-900 bg-black">
+                    <div className="w-full max-w-5xl h-full relative bg-black">
                       <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LazyZikirPage 
                           onBack={() => {
@@ -2581,7 +2581,7 @@ function AppContent() {
                 )}
                 {activeView === 'hatim-rooms' && (
                   <div className="fixed inset-0 md:left-64 z-50 bg-black flex justify-center">
-                    <div className="w-full max-w-2xl h-full relative border-x border-neutral-900 bg-black">
+                    <div className="w-full max-w-5xl h-full relative bg-black">
                       <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LazyHatimRoomsPage 
                           onBack={() => {
@@ -2597,7 +2597,7 @@ function AppContent() {
                 )}
                 {activeView === 'privacy' && (
                   <div className={`fixed inset-0 ${previousView !== 'landing' ? 'md:left-64' : ''} z-50 bg-sage-50 dark:bg-black flex justify-center overflow-y-auto`}>
-                    <div className="w-full max-w-2xl min-h-full relative border-x border-sage-200 dark:border-neutral-900 bg-sage-50 dark:bg-black">
+                    <div className="w-full max-w-5xl min-h-full relative bg-sage-50 dark:bg-black">
                       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LazyLegalPage 
                           type="privacy" 
@@ -2613,7 +2613,7 @@ function AppContent() {
 
                 {activeView === 'terms' && (
                   <div className={`fixed inset-0 ${previousView !== 'landing' ? 'md:left-64' : ''} z-50 bg-sage-50 dark:bg-black flex justify-center overflow-y-auto`}>
-                    <div className="w-full max-w-2xl min-h-full relative border-x border-sage-200 dark:border-neutral-900 bg-sage-50 dark:bg-black">
+                    <div className="w-full max-w-5xl min-h-full relative bg-sage-50 dark:bg-black">
                       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LazyLegalPage 
                           type="terms" 
@@ -2628,7 +2628,7 @@ function AppContent() {
                 )}
                 {activeView === 'data-deletion' && (
                   <div className="fixed inset-0 md:left-64 z-50 bg-sage-50 dark:bg-black flex justify-center overflow-y-auto">
-                    <div className="w-full max-w-2xl min-h-full relative border-x border-sage-200 dark:border-neutral-900 bg-sage-50 dark:bg-black">
+                    <div className="w-full max-w-5xl min-h-full relative bg-sage-50 dark:bg-black">
                       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LazyDataDeletionPage 
                           onBack={() => {
@@ -2641,7 +2641,7 @@ function AppContent() {
                 )}
                 {activeView === 'namaz' && (
                   <div className="fixed inset-0 md:left-64 z-50 bg-sage-50 dark:bg-black flex justify-center overflow-y-auto">
-                    <div className="w-full max-w-2xl min-h-full relative border-x border-sage-200 dark:border-neutral-900 bg-sage-50 dark:bg-black p-4 md:p-8">
+                    <div className="w-full max-w-5xl min-h-full relative bg-sage-50 dark:bg-black p-4 md:p-8">
                       <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-sage-500 border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LazyNamazTakipPage data={data} setData={setData} />
                       </Suspense>
@@ -2650,7 +2650,7 @@ function AppContent() {
                 )}
                 {activeView === 'chat' && (
                   <div className="fixed inset-0 md:left-64 z-[70] bg-black flex justify-center overflow-hidden">
-                    <div className="w-full max-w-2xl h-full relative border-x border-neutral-900 bg-black">
+                    <div className="w-full max-w-5xl h-full relative bg-black">
                       <Suspense fallback={<div className="flex h-full items-center justify-center"><div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LazyChatPage 
                           onBack={() => {

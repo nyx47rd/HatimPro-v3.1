@@ -110,7 +110,7 @@ export const StatsPage: React.FC<StatsPageProps> = ({ data, onBack, playClick })
         <h2 className="text-lg font-bold tracking-tight">Gelişmiş İstatistikler</h2>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 pt-8">
+      <div className="max-w-5xl mx-auto px-6 pt-8">
         {/* Overview Cards */}
         <div className="grid grid-cols-2 gap-4 mb-8">
           <motion.div 
@@ -230,6 +230,19 @@ export const StatsPage: React.FC<StatsPageProps> = ({ data, onBack, playClick })
                   cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                   contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px' }}
                   itemStyle={{ color: '#fff' }}
+                  labelFormatter={(name) => {
+                    const fullDays: { [key: string]: string } = {
+                      'Paz': 'Pazar',
+                      'Pzt': 'Pazartesi',
+                      'Sal': 'Salı',
+                      'Çar': 'Çarşamba',
+                      'Per': 'Perşembe',
+                      'Cum': 'Cuma',
+                      'Cmt': 'Cumartesi'
+                    };
+                    return fullDays[name] || name;
+                  }}
+                  formatter={(value) => [`${value} sayfa`, 'Okunan Sayfa']}
                 />
                 <Bar dataKey="pages" radius={[6, 6, 0, 0]}>
                   {stats.dayData.map((entry, index) => (

@@ -433,7 +433,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ username, onBack, play
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 pt-8">
+      <div className="max-w-5xl mx-auto px-6 pt-8">
         {/* Profile Info */}
         <div className="flex flex-col items-center text-center mb-10">
           <div className="relative mb-4">

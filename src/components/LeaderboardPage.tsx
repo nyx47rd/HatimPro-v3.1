@@ -54,7 +54,7 @@ export const LeaderboardPage: React.FC<LeaderboardPageProps> = ({ onBack, playCl
         <h2 className="text-lg font-bold tracking-tight">Liderlik Tablosu</h2>
       </div>
 
-      <div className="max-w-2xl mx-auto px-6 pt-8">
+      <div className="max-w-5xl mx-auto px-6 pt-8">
         <div className="text-center mb-10">
           <div className="inline-block p-4 bg-yellow-500/20 rounded-full mb-4">
             <Trophy size={48} className="text-yellow-500" />
