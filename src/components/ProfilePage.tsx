@@ -461,7 +461,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ username, onBack, play
               className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] cursor-grab active:cursor-grabbing"
             >
               {/* Card 1: Level & XP */}
-              <div className="w-[85%] shrink-0 snap-center bg-gradient-to-br from-blue-900/40 to-purple-900/40 rounded-3xl p-6 border border-white/10 flex flex-col justify-between aspect-[3/2]">
+              <div className="w-[85%] sm:w-[320px] shrink-0 snap-center bg-gradient-to-br from-blue-900/40 to-purple-900/40 rounded-3xl p-6 border border-white/10 flex flex-col justify-between aspect-[3/2]">
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <p className="text-white/60 text-sm font-bold uppercase tracking-wider mb-1">Seviye</p>
@@ -483,7 +483,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ username, onBack, play
               </div>
 
               {/* Card 2: Streak & Trust */}
-              <div className="w-[85%] shrink-0 snap-center bg-gradient-to-br from-orange-900/40 to-red-900/40 rounded-3xl p-6 border border-white/10 flex flex-col justify-between aspect-[3/2]">
+              <div className="w-[85%] sm:w-[320px] shrink-0 snap-center bg-gradient-to-br from-orange-900/40 to-red-900/40 rounded-3xl p-6 border border-white/10 flex flex-col justify-between aspect-[3/2]">
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <p className="text-white/60 text-sm font-bold uppercase tracking-wider mb-1">Okuma Serisi</p>
@@ -508,7 +508,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ username, onBack, play
               </div>
 
               {/* Card 3: Reading & Zikir */}
-              <div className="w-[85%] shrink-0 snap-center bg-gradient-to-br from-emerald-900/40 to-teal-900/40 rounded-3xl p-6 border border-white/10 flex flex-col justify-between aspect-[3/2]">
+              <div className="w-[85%] sm:w-[320px] shrink-0 snap-center bg-gradient-to-br from-emerald-900/40 to-teal-900/40 rounded-3xl p-6 border border-white/10 flex flex-col justify-between aspect-[3/2]">
                 <div className="grid grid-cols-2 gap-4 h-full">
                   <div className="flex flex-col justify-center">
                     <BookOpen size={20} className="text-emerald-400 mb-2" />
@@ -528,7 +528,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ username, onBack, play
               </div>
 
               {/* Card 4: Zikir Arena */}
-              <div className="w-[85%] shrink-0 snap-center bg-gradient-to-br from-purple-900/40 to-indigo-900/40 rounded-3xl p-6 border border-white/10 flex flex-col justify-between aspect-[3/2]">
+              <div className="w-[85%] sm:w-[320px] shrink-0 snap-center bg-gradient-to-br from-purple-900/40 to-indigo-900/40 rounded-3xl p-6 border border-white/10 flex flex-col justify-between aspect-[3/2]">
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <p className="text-white/60 text-sm font-bold uppercase tracking-wider mb-1">Zikir Arena (ZGP)</p>
