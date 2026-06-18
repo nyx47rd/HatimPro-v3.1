@@ -7,6 +7,7 @@ import {
   History as HistoryIcon, 
   ChevronRight, 
   Trash2, 
+  Search,
   Calendar,
   X,
   CheckCircle2,
@@ -430,6 +431,9 @@ function AppContent() {
 
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
   const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
+  const [historyFilterTaskId, setHistoryFilterTaskId] = useState('all');
+  const [historySortRule, setHistorySortRule] = useState<'date_desc' | 'date_asc' | 'pages_desc' | 'pages_asc'>('date_desc');
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -1400,8 +1404,7 @@ function AppContent() {
               Sesli Kur'an Oku
             </button>
             <p className="text-[10px] text-sage-600 dark:text-neutral-400 text-center px-4">
-              💡 Bugünün kaydı için <strong>Okumaya Başla</strong> butonunu kullanın. <br />
-              <strong>+</strong> butonu sadece geçmiş günler için kayıt yapmanızı sağlar.
+              💡 <strong>Okumaya Başla</strong> butonu ile süreli okuma başlatabilir veya <strong>+</strong> butonunu kullanarak <strong>hem bugün hem de geçmiş günler için</strong> doğrudan okuma kaydı ekleyebilirsiniz.
             </p>
           </div>
         )}
@@ -1414,7 +1417,7 @@ function AppContent() {
             <HistoryIcon size={18} className="text-sage-600" />
             <h2 className="text-lg font-bold text-sage-800">Son Okumalar</h2>
           </div>
-          <button onClick={() => { setActiveView('history'); }} className="text-sage-700 dark:text-sage-300 text-sm font-semibold hover:underline">Tümü</button>
+          <button onClick={() => { setActiveView('history'); }} className="text-white hover:text-white/80 text-sm font-semibold hover:underline bg-sage-600 dark:bg-neutral-800 px-3 py-1.5 rounded-xl transition-all">Tümü</button>
         </div>
 
         <div className="space-y-3">
@@ -1547,72 +1550,199 @@ function AppContent() {
     </div>
   );
 
-  const renderHistory = () => (
-    <div className="space-y-6 pb-24">
-      <div className="flex items-center justify-between px-2">
-        <h2 className="text-2xl font-bold text-sage-800">Tüm Geçmiş</h2>
-        {selectedLogs.length > 0 && (
-          <button 
-            onClick={handleBulkDeleteLogs}
-            className="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-red-100 transition-colors"
-          >
-            <Trash2 size={16} />
-            Sil ({selectedLogs.length})
-          </button>
-        )}
-      </div>
+  const renderHistory = () => {
+    // Filter and sort computation
+    const filteredLogs = data.logs.filter((log) => {
+      const task = data.tasks.find(t => t.id === log.taskId);
+      const taskName = (task?.name || 'Silinmiş Görev').toLowerCase();
+      const pagesStr = `${log.pagesRead} sayfa`;
+      const absPageStr = `sayfa ${log.absolutePage}`;
+      const notesStr = (log.note || '').toLowerCase();
+      const dateStr = new Date(log.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }).toLowerCase();
+      
+      const matchesSearch = !historySearchQuery.trim() || 
+        taskName.includes(historySearchQuery.toLowerCase()) || 
+        pagesStr.includes(historySearchQuery.toLowerCase()) ||
+        absPageStr.includes(historySearchQuery.toLowerCase()) ||
+        notesStr.includes(historySearchQuery.toLowerCase()) ||
+        dateStr.includes(historySearchQuery.toLowerCase());
 
-      <div className="space-y-3">
-        {data.logs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((log) => {
-          const task = data.tasks.find(t => t.id === log.taskId);
-          const isSelected = selectedLogs.includes(log.id);
+      const matchesTask = historyFilterTaskId === 'all' || log.taskId === historyFilterTaskId;
 
-          return (
-            <div key={log.id} className={`bg-white dark:bg-neutral-900 rounded-2xl p-4 border transition-all flex items-center gap-4 ${isSelected ? 'border-sage-500 dark:border-white bg-sage-50/30 dark:bg-neutral-800' : 'border-sage-100 dark:border-neutral-800 shadow-sm'}`}>
-              <button 
-                onClick={() => {
-                  playClick();
-                  setSelectedLogs(prev => 
-                    prev.includes(log.id) ? prev.filter(id => id !== log.id) : [...prev, log.id]
-                  );
-                }}
-                className={`transition-colors ${isSelected ? 'text-sage-600 dark:text-white' : 'text-sage-200 dark:text-neutral-600'}`}
+      return matchesSearch && matchesTask;
+    });
+
+    const sortedLogs = [...filteredLogs].sort((a, b) => {
+      if (historySortRule === 'date_desc') {
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      } else if (historySortRule === 'date_asc') {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      } else if (historySortRule === 'pages_desc') {
+        return b.pagesRead - a.pagesRead;
+      } else if (historySortRule === 'pages_asc') {
+        return a.pagesRead - b.pagesRead;
+      }
+      return 0;
+    });
+
+    const hasActiveFilters = historySearchQuery.trim() !== '' || historyFilterTaskId !== 'all';
+
+    return (
+      <div className="space-y-6 pb-24">
+        <div className="flex items-center justify-between px-2">
+          <div>
+            <h2 className="text-2xl font-bold text-sage-800 dark:text-white">Okuma Geçmişi</h2>
+            <p className="text-xs text-sage-600 dark:text-neutral-400 mt-1">Girişlerinizi arayın, filtreleyin ve yönetin.</p>
+          </div>
+          {selectedLogs.length > 0 && (
+            <button 
+              onClick={handleBulkDeleteLogs}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <Trash2 size={16} />
+              Sil ({selectedLogs.length})
+            </button>
+          )}
+        </div>
+
+        <div className="bg-white dark:bg-neutral-900 border border-sage-100 dark:border-neutral-800 p-5 rounded-3xl shadow-sm space-y-4">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-sage-400" size={18} />
+            <input
+              type="text"
+              value={historySearchQuery}
+              onChange={(e) => setHistorySearchQuery(e.target.value)}
+              placeholder="Görev adı, sayfa sayısı veya tarih ile arama yapın..."
+              className="w-full pl-11 pr-4 py-3 bg-sage-50 dark:bg-neutral-800 border border-sage-200 dark:border-neutral-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage-500 transition-all text-sm dark:text-white placeholder-sage-400 dark:placeholder-neutral-500"
+            />
+            {historySearchQuery && (
+              <button
+                onClick={() => setHistorySearchQuery('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-sage-500 hover:text-sage-700 dark:text-neutral-400 dark:hover:text-neutral-200 cursor-pointer"
               >
-                {isSelected ? <CheckSquare size={22} /> : <Square size={22} />}
+                Yazıyı Sil
               </button>
+            )}
+          </div>
 
-              <div className="flex-1 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="bg-sage-50 dark:bg-neutral-800 p-3 rounded-xl text-sage-600 dark:text-white">
-                    <Calendar size={20} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-sage-800 dark:text-white">
-                      {new Date(log.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    </p>
-                    <p className="text-xs text-sage-600 dark:text-neutral-400">
-                      {task?.name || 'Silinmiş Görev'} • {log.pagesRead} sayfa • <span className="font-semibold text-sage-700 dark:text-neutral-300">Sayfa {log.absolutePage}</span>
-                    </p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => handleDeleteLog(log.id)}
-                  className="p-2 text-sage-200 hover:text-red-500 dark:text-neutral-600 dark:hover:text-red-400 transition-opacity"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-sage-600 dark:text-neutral-400 mb-1.5 uppercase tracking-wider">Görev / Hatim Filtresi</label>
+              <select
+                value={historyFilterTaskId}
+                onChange={(e) => setHistoryFilterTaskId(e.target.value)}
+                className="w-full px-3 py-2.5 bg-sage-50 dark:bg-neutral-800 border border-sage-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-500 text-sm dark:text-white cursor-pointer"
+              >
+                <option value="all">Tüm Görevler</option>
+                {data.tasks.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
             </div>
-          );
-        })}
-        {data.logs.length === 0 && (
-          <div className="bg-white/50 dark:bg-neutral-900/50 border border-dashed border-sage-300 dark:border-neutral-700 rounded-2xl p-12 text-center">
-            <p className="text-sage-500 dark:text-neutral-400 italic">Henüz bir geçmiş kaydı bulunmuyor.</p>
+
+            <div>
+              <label className="block text-xs font-bold text-sage-600 dark:text-neutral-400 mb-1.5 uppercase tracking-wider">Sıralama Seçeneği</label>
+              <select
+                value={historySortRule}
+                onChange={(e) => setHistorySortRule(e.target.value as any)}
+                className="w-full px-3 py-2.5 bg-sage-50 dark:bg-neutral-800 border border-sage-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-sage-500 text-sm dark:text-white cursor-pointer"
+              >
+                <option value="date_desc">Tarih (Yeniye Doğru)</option>
+                <option value="date_asc">Tarih (Eskiye Doğru)</option>
+                <option value="pages_desc">Okunan Sayfa (Çoktan Aza)</option>
+                <option value="pages_asc">Okunan Sayfa (Azdan Çoka)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {sortedLogs.length > 0 && (
+          <div className="flex justify-between items-center text-xs text-sage-600 dark:text-neutral-400 px-2">
+            <span>Toplam <strong>{sortedLogs.length}</strong> kayıt listeleniyor.</span>
+            <button
+              onClick={() => {
+                const allIds = sortedLogs.map(l => l.id);
+                const hasAllSelected = allIds.every(id => selectedLogs.includes(id));
+                if (hasAllSelected) {
+                  setSelectedLogs(prev => prev.filter(id => !allIds.includes(id)));
+                } else {
+                  setSelectedLogs(prev => [...new Set([...prev, ...allIds])]);
+                }
+              }}
+              className="text-white font-bold bg-black hover:bg-neutral-800 px-2.5 py-1.5 rounded-lg cursor-pointer transition-all"
+            >
+              {sortedLogs.map(l => l.id).every(id => selectedLogs.includes(id)) ? 'Seçimi Kaldır' : 'Tümünü Seç'}
+            </button>
           </div>
         )}
+
+        <div className="space-y-3">
+          {sortedLogs.map((log) => {
+            const task = data.tasks.find(t => t.id === log.taskId);
+            const isSelected = selectedLogs.includes(log.id);
+
+            return (
+              <div key={log.id} className={`bg-white dark:bg-neutral-900 rounded-2xl p-4 border transition-all flex items-center gap-4 ${isSelected ? 'border-sage-500 dark:border-white bg-sage-50/10 dark:bg-neutral-800/80 shadow-md' : 'border-sage-100 dark:border-neutral-800/80 shadow-sm'}`}>
+                <button 
+                  onClick={() => {
+                    playClick();
+                    setSelectedLogs(prev => 
+                      prev.includes(log.id) ? prev.filter(id => id !== log.id) : [...prev, log.id]
+                    );
+                  }}
+                  className={`transition-colors cursor-pointer ${isSelected ? 'text-sage-600 dark:text-white' : 'text-sage-200 dark:text-neutral-600 hover:text-sage-400'}`}
+                >
+                  {isSelected ? <CheckSquare size={22} /> : <Square size={22} />}
+                </button>
+
+                <div className="flex-1 flex items-center justify-between min-w-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="bg-sage-100 dark:bg-neutral-800/80 p-3 rounded-xl text-sage-600 dark:text-white shrink-0">
+                      <Calendar size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-sage-800 dark:text-white truncate">
+                        {new Date(log.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                      <p className="text-xs text-sage-600 dark:text-neutral-400 mt-0.5 truncate">
+                        <span className="font-bold text-sage-500 dark:text-neutral-300">{task?.name || 'Silinmiş Görev'}</span> • {log.pagesRead} sayfa • <span className="font-semibold text-sage-700 dark:text-neutral-300">Sayfa {log.absolutePage}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => handleDeleteLog(log.id)}
+                    className="p-2 text-sage-200 hover:text-red-500 dark:text-neutral-600 dark:hover:text-red-400 transition-colors shrink-0 cursor-pointer"
+                    title="Sil"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {sortedLogs.length === 0 && (
+            <div className="bg-white/50 dark:bg-neutral-900/50 border border-dashed border-sage-300 dark:border-neutral-700 rounded-2xl p-12 text-center">
+              <p className="text-sage-500 dark:text-neutral-400 italic">
+                {hasActiveFilters ? 'Arama kriterlerine uygun kayıt bulunamadı.' : 'Henüz bir geçmiş kaydı bulunmuyor.'}
+              </p>
+              {hasActiveFilters && (
+                <button
+                  onClick={() => {
+                    setHistorySearchQuery('');
+                    setHistoryFilterTaskId('all');
+                  }}
+                  className="mt-4 text-xs font-bold text-white bg-black hover:bg-neutral-800 px-4 py-2 rounded-xl transition-all cursor-pointer"
+                >
+                  Filtreleri Temizle
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderSettings = () => (
     <div className="space-y-8 pb-24">
@@ -2273,6 +2403,10 @@ function AppContent() {
                   <Calendar size={20} strokeWidth={activeView === 'namaz' ? 2.5 : 2} />
                   Namaz Takip
                 </button>
+                <button onClick={() => setActiveView('history')} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'history' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
+                  <HistoryIcon size={20} strokeWidth={activeView === 'history' ? 2.5 : 2} />
+                  Son Okumalar
+                </button>
                 <button onClick={() => { setProfileUsername(undefined); setActiveView('profile'); }} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'profile' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
                   <User size={20} strokeWidth={activeView === 'profile' ? 2.5 : 2} />
                   Profil
@@ -2616,6 +2750,12 @@ function AppContent() {
                                 </div>
                                 <span className="font-bold text-sage-800 dark:text-white">İstatistikler</span>
                               </button>
+                              <button onClick={() => { playClick(); setActiveView('history'); setIsMoreDrawerOpen(false); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-sage-50 dark:hover:bg-neutral-800 rounded-2xl transition-colors">
+                                <div className="bg-rose-100 dark:bg-rose-900/30 p-2 rounded-xl text-rose-600 dark:text-rose-400">
+                                  <HistoryIcon size={20} />
+                                </div>
+                                <span className="font-bold text-sage-800 dark:text-white">Son Okumalar</span>
+                              </button>
                               <button onClick={() => { playClick(); setActiveView('settings'); setIsMoreDrawerOpen(false); }} className="w-full flex items-center gap-4 px-6 py-4 hover:bg-sage-50 dark:hover:bg-neutral-800 rounded-2xl transition-colors">
                                 <div className="bg-sage-100 dark:bg-neutral-800 p-2 rounded-xl text-sage-600 dark:text-white">
                                   <Settings size={20} />
@@ -2898,7 +3038,7 @@ function AppContent() {
                                 onClick={() => handleJuzClick(juzNum)}
                                 className={`rounded-lg py-2 text-sm font-bold transition-all ${
                                   isSelected 
-                                    ? "bg-sage-700 text-white scale-110 shadow-md" 
+                                    ? "bg-white text-black border-2 border-sage-500 scale-110 shadow-md" 
                                     : "bg-white dark:bg-sage-200 border border-sage-200 dark:border-sage-300 text-sage-700 dark:text-sage-800 hover:bg-sage-50 dark:hover:bg-sage-300"
                                 }`}
                               >

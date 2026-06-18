@@ -58,7 +58,7 @@ async function startServer() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gemini-fast',
+          model: 'openai',
           messages: messages
         })
       });
