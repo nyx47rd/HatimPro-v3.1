@@ -240,6 +240,17 @@ function AppContent() {
     return localStorage.getItem('guest_mode') === 'true';
   });
 
+  // Handle initial load redirect for logged-in users / guests
+  const hasCheckedInitialRedirect = useRef(false);
+  useEffect(() => {
+    if (!authLoading && !hasCheckedInitialRedirect.current) {
+      if ((user || isGuestMode) && location.pathname === '/') {
+        navigate('/home', { replace: true });
+      }
+      hasCheckedInitialRedirect.current = true;
+    }
+  }, [authLoading, user, isGuestMode, location.pathname, navigate]);
+
   const activeView = useMemo<View>(() => {
     const path = location.pathname;
     if (path.startsWith('/@')) return 'profile';
@@ -256,12 +267,14 @@ function AppContent() {
     if (path === '/hatim-rooms') return 'hatim-rooms';
     if (path === '/namaz') return 'namaz';
     if (path === '/profile') return 'profile';
-    if (path === '/' && !user && !isGuestMode && !authLoading) return 'landing';
+    if (path === '/home') return 'home';
+    if (path === '/') return 'landing';
     return 'home';
-  }, [location.pathname, user, isGuestMode, authLoading]);
+  }, [location.pathname]);
 
   const setActiveView = (view: View) => {
-    if (view === 'home' || view === 'landing') navigate('/');
+    if (view === 'landing') navigate('/');
+    else if (view === 'home') navigate('/home');
     else navigate(`/${view}`);
   };
 
@@ -297,7 +310,7 @@ function AppContent() {
         logs: []
       });
       
-      setActiveView('home');
+      setActiveView('landing');
       setIsMoreDrawerOpen(false);
     } catch (error) {
       console.error("Logout error:", error);
@@ -2234,10 +2247,14 @@ function AppContent() {
             {/* Desktop Sidebar */}
             <aside className="hidden md:flex flex-col w-64 border-r border-sage-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 h-screen sticky top-0 shrink-0 z-40">
               <div className="p-6 border-b border-sage-200 dark:border-neutral-800 flex items-center justify-between">
-                <h1 className="display text-2xl font-bold text-sage-800 dark:text-white tracking-tight flex items-center gap-2">
+                <button
+                  onClick={() => { playClick(); setActiveView('landing'); }}
+                  className="display text-2xl font-bold text-sage-800 dark:text-white tracking-tight flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer focus:outline-none text-left"
+                  id="desktop-logo-btn"
+                >
                   <img src="/favicon.svg" alt="HatimPro Logo" className="w-8 h-8" referrerPolicy="no-referrer" />
                   HatimPro
-                </h1>
+                </button>
               </div>
               <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
                 <button onClick={() => setActiveView('home')} className={`sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${activeView === 'home' ? 'bg-sage-100 dark:bg-neutral-800 text-sage-800 dark:text-white font-bold' : 'text-sage-600 dark:text-neutral-400 hover:bg-sage-50 dark:hover:bg-neutral-800/50'}`}>
@@ -2326,10 +2343,14 @@ function AppContent() {
               {/* Header (Mobile Only) */}
               <header className="md:hidden bg-white dark:bg-neutral-900 border-b border-sage-200 dark:border-neutral-800 px-6 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] sticky top-0 z-30">
                 <div className="max-w-2xl mx-auto flex justify-between items-center">
-                  <h1 className="display text-2xl font-bold text-sage-800 dark:text-white tracking-tight flex items-center gap-2">
+                  <button
+                    onClick={() => { playClick(); setActiveView('landing'); }}
+                    className="display text-2xl font-bold text-sage-800 dark:text-white tracking-tight flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer focus:outline-none text-left"
+                    id="mobile-logo-btn"
+                  >
                     <img src="/favicon.svg" alt="HatimPro Logo" className="w-8 h-8" referrerPolicy="no-referrer" />
                     HatimPro
-                  </h1>
+                  </button>
                   <div className="flex items-center gap-2">
                     {!user && (
                       <button 
